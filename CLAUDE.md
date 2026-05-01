@@ -236,7 +236,7 @@ system patterns to prevent integration failures.
 
 Let me use the framework validation tools and platform-specific skills to ensure proper integration."
 
-[Claude performs framework verification using .claude/tools/scripts/framework_validation.sh and /no-os-maxim-platform skill, optionally delegating to driver-orchestrator.agent.md for workflow coordination]
+[Claude performs framework verification using .claude/tools/scripts/framework_validation.sh and /no-os-maxim-platform skill, optionally delegating to .claude/github-integration/agents/driver-orchestrator.agent.md for workflow coordination]
 
 Claude: "Framework verification complete:
 ✅ Build system patterns validated (individual file includes, no wildcards)
@@ -308,7 +308,7 @@ After plan approval, Claude executes WITHOUT asking intermediate questions:
 - ✅ **Report completion** with summary
 
 ### **Critical Requirements for Claude:**
-- **🚨 ALWAYS use framework validation first** - Run `./.claude/tools/scripts/framework_validation.sh` before planning
+- **🚨 ALWAYS use framework validation first** - Run `.claude/tools/scripts/framework_validation.sh` before planning
 - **🚨 ALWAYS use EnterPlanMode** - No implementation without planning
 - **🚨 USE SPECIALIZED SKILLS** - Leverage `.claude/skills/` for domain-specific guidance:
   - `/datasheet-parsing` for comprehensive device analysis
@@ -347,10 +347,10 @@ python3 tools/scripts/build_projects.py . -platform=<platform> -project=<project
 
 ```bash
 # MANDATORY before ANY driver implementation
-./.claude/tools/scripts/framework_validation.sh <device> <category> <platform>
+.claude/tools/scripts/framework_validation.sh <device> <category> <platform>
 
 # Example usage
-./.claude/tools/scripts/framework_validation.sh ltm4700 power maxim
+.claude/tools/scripts/framework_validation.sh ltm4700 power maxim
 ```
 
 ---
@@ -400,7 +400,7 @@ Instead of bypassing quality checks:
 Before creating a PR, verify:
 
 ### **🚨 Framework Verification (MANDATORY FIRST)**
-- [ ] Framework validation passes (`./.claude/tools/scripts/framework_validation.sh`)
+- [ ] Framework validation passes (`.claude/tools/scripts/framework_validation.sh`)
 - [ ] Build system patterns verified (no wildcards, individual includes)
 - [ ] Platform APIs confirmed (headers exist, constants validated)
 - [ ] Test framework version verified (Ceedling 1.0.1, modern format)
@@ -522,7 +522,7 @@ For detailed implementation guidance, see these comprehensive guides:
 **🏗️ Build & Development:**
 ```bash
 .claude/tools/scripts/framework_validation.sh          # MANDATORY framework verification
-.claude/tools/scripts/build_projects.py                # Multi-platform builds
+tools/scripts/build_projects.py                        # Multi-platform builds (root level)
 .claude/tools/pre-commit/create-device-template.py     # Device template generation
 .claude/tools/pre-commit/new-dev-branch.sh            # Branch creation automation
 ```
@@ -531,7 +531,6 @@ For detailed implementation guidance, see these comprehensive guides:
 ```bash
 .claude/tools/pre-commit/auto-update-patterns.py       # Continuous improvement
 .claude/tools/pre-commit/configure-pattern-automation.sh # Setup automation
-.claude/tools/transfer-to-repository.sh                # Repository migration
 ```
 
 ### GitHub Actions Workflows (.claude/github-integration/workflows/)
