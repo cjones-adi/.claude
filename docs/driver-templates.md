@@ -2,6 +2,8 @@
 
 This document provides standard templates for no-OS driver development, following established patterns and conventions.
 
+> **🚨 CRITICAL**: For PROJECT templates (Makefile, builds.json, src.mk, examples), see **[Current Project Templates](current-project-templates.md)** which reflects the latest framework changes (May 2026). This file covers driver source code templates only.
+
 ## Header File Template (`device_name.h`)
 
 > **📝 Template Note**: Replace all `device_name` placeholders with your specific device name (e.g., `ltm4700.h`, `adm1275.c`). Follow Linux kernel principle: use explicit device names, never generic placeholders in actual code. **@author field should only contain human developer information** - never include AI attribution.
@@ -258,33 +260,33 @@ projects/<device_name>/
 
 ## Build System Integration Template
 
+> **⚠️ IMPORTANT**: For complete project templates including Makefile, builds.json, and src.mk patterns, see [Current Project Templates](current-project-templates.md) which reflects the latest framework changes.
+
 ```makefile
-# Driver source files (individual files only)
+# Individual header includes (NEW FRAMEWORK REQUIREMENT)
+INCS += $(INCLUDE)/no_os_delay.h	\
+	$(INCLUDE)/no_os_error.h	\
+	$(INCLUDE)/no_os_list.h		\
+	$(INCLUDE)/no_os_gpio.h		\
+	$(INCLUDE)/no_os_i2c.h		\
+	$(INCLUDE)/no_os_uart.h		\
+	$(INCLUDE)/no_os_alloc.h
+
+# Individual source includes (NEW FRAMEWORK REQUIREMENT)
+SRCS += $(DRIVERS)/api/no_os_i2c.c	\
+	$(DRIVERS)/api/no_os_gpio.c	\
+	$(DRIVERS)/api/no_os_uart.c	\
+	$(NO-OS)/util/no_os_alloc.c	\
+	$(NO-OS)/util/no_os_util.c
+
+# Driver-specific includes and sources
+INCS += $(DRIVERS)/<category>/<device>/<device>.h
 SRCS += $(DRIVERS)/<category>/<device>/<device>.c
-SRCS += $(DRIVERS)/<category>/<device>/iio_<device>.c
 
-# Driver headers (individual headers only)
-INCS += $(DRIVERS)/<category>/<device>
-INCS += $(INCLUDE)
-
-# Required no-OS APIs (verified signatures)
-SRCS += $(DRIVERS)/api/no_os_i2c.c
-SRCS += $(DRIVERS)/api/no_os_gpio.c
-SRCS += $(NO-OS)/util/no_os_alloc.c
-
-# Platform drivers (verified platform constants)
-SRCS += $(PLATFORM_DRIVERS)/$(PLATFORM)_gpio.c
-SRCS += $(PLATFORM_DRIVERS)/$(PLATFORM)_i2c.c
-
-# Platform headers (verified existence)
-INCS += $(PLATFORM_DRIVERS)
-
-# IIO support (if applicable)
-SRCS += $(NO-OS)/iio/iio.c
-INCS += $(NO-OS)/iio
-
-# Examples integration (required)
-include $(PROJECT)/src/examples.mk
+# 🚨 CRITICAL: Use individual file includes only
+# ❌ DO NOT USE: NO_OS_INC_DIRS += $(INCLUDE)
+# ❌ DO NOT USE: Wildcard directory includes
+# ✅ USE: Individual header files as shown above
 ```
 
 ## Documentation Templates

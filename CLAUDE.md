@@ -453,7 +453,8 @@ For detailed implementation guidance, see these comprehensive guides:
 - **[Framework Integration Guide](docs/framework-integration-guide.md)**: Complete framework verification process
 - **[Framework Validation Lessons](docs/framework-validation-lessons.md)**: Critical failure patterns and solutions (IMPORTANT)
 - **[Framework Troubleshooting](docs/framework-validation-troubleshooting.md)**: Quick fixes for common validation failures
-- **[Driver Templates](docs/driver-templates.md)**: Standard templates and patterns
+- **[Driver Templates](docs/driver-templates.md)**: Standard driver source code templates and patterns
+- **[Current Project Templates](docs/current-project-templates.md)**: Updated project templates (Makefile, builds.json, src.mk) - May 2026
 - **[Quality Assurance Guide](docs/quality-assurance-guide.md)**: QA patterns and error prevention
 - **[Git Workflow Guide](docs/git-workflow-guide.md)**: Complete git workflow and commit patterns
 
