@@ -24,7 +24,7 @@ This is Analog Devices' no-OS repository containing hardware drivers and referen
 - **Platform-Specific Skills**:
   - `/no-os-maxim-platform` - MAX32xxx platform validation
   - `/no-os-stm32-platform` - STM32 HAL integration validation
-- **GitHub Integration Agents**: `.claude/github-integration/agents/`
+- **Agents**: `.claude/agents/`
   - `driver-orchestrator.agent.md` - Workflow coordination and validation
 
 **🚨 CRITICAL: Never proceed to planning without framework verification**
@@ -49,7 +49,7 @@ This is Analog Devices' no-OS repository containing hardware drivers and referen
   - **IMU/Sensors**: `/no-os-imu` - Motion sensing, FIFO, calibration patterns
   - **Temperature**: `/no-os-temperature` - RTD, thermocouple, digital sensors
   - **Frequency**: `/no-os-frequency` - PLLs, VCOs, clock distribution, JESD204B
-- **GitHub Integration Agents**: `.claude/github-integration/agents/`
+- **Agents**: `.claude/agents/`
   - `driver-planner-no-os.agent.md` - Specialized no-OS planning agent
   - `driver-planner-linux.agent.md` - Linux kernel planning agent
   - `driver-planner-zephyr.agent.md` - Zephyr RTOS planning agent
@@ -92,7 +92,7 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 - **Testing Framework**: `/no-os-unit-testing` - Ceedling/Unity/CMock, mocking strategies, coverage
 - **Quality Tools**: `.claude/tools/pre-commit/` - AStyle, Cppcheck, pattern detection
 - **Coverage Analysis**: Built-in gcov support and automated coverage reporting
-- **GitHub Integration Agents**: `.claude/github-integration/agents/`
+- **Agents**: `.claude/agents/`
   - `driver-coder-no-os.agent.md` - Specialized no-OS implementation agent
   - `driver-coder-linux.agent.md` - Linux kernel implementation agent
   - `driver-coder-zephyr.agent.md` - Zephyr RTOS implementation agent
@@ -124,7 +124,7 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 - **Multi-platform Builds**: Python build scripts for xilinx, stm32, maxim, mbed, pico, aducm3029, lattice
 - **Build System Skills**: `/no-os-make-and-linker` - src.mk validation, dependency checking
 - **Platform Verification**: Platform-specific skills for build environment validation
-- **GitHub Actions Workflows**: `.claude/github-integration/workflows/`
+- **GitHub Actions Workflows**: `.claude/workflows/`
   - `ci-enhanced.yml` - Enhanced CI with metrics and multi-platform builds
   - `sonarcloud.yml` - Automated SonarCloud static analysis
 
@@ -132,11 +132,11 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 - **Review Pattern Automation**: 144 PRs analyzed, 507 comments categorized, 62.5% prevention rate
 - **Real-time Quality**: `.claude/tools/pre-commit/auto-update-patterns.py` - Continuous improvement
 - **Quality Metrics**: Complete 6-month statistical analysis for systematic improvement
-- **GitHub Integration Agents**: `.claude/github-integration/agents/`
+- **Agents**: `.claude/agents/`
   - `driver-code-reviewer-no-os.agent.md` - no-OS code review agent
   - `driver-code-reviewer-linux.agent.md` - Linux kernel code review agent
   - `driver-code-reviewer-zephyr.agent.md` - Zephyr RTOS code review agent
-- **GitHub Actions Workflows**: `.claude/github-integration/workflows/`
+- **GitHub Actions Workflows**: `.claude/workflows/`
   - `update-review-patterns.yml` - Automated weekly pattern analysis updates
   - `security-analysis.yml` - Automated security vulnerability scanning
   - `dashboard.yml` - Development metrics and dashboard automation
@@ -148,7 +148,7 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 13. **Merge** - Maintainer approval and integration
 
 **🔄 Automated Submission Support:**
-- **GitHub Actions Workflows**: `.claude/github-integration/workflows/`
+- **GitHub Actions Workflows**: `.claude/workflows/`
   - `labeler.yml` - Automated PR labeling based on file paths and content
 
 **🔒 MANDATORY PRE-ACTION COMPLIANCE CHECK:**
@@ -236,7 +236,7 @@ system patterns to prevent integration failures.
 
 Let me use the framework validation tools and platform-specific skills to ensure proper integration."
 
-[Claude performs framework verification using .claude/tools/scripts/framework_validation.sh and /no-os-maxim-platform skill, optionally delegating to .claude/github-integration/agents/driver-orchestrator.agent.md for workflow coordination]
+[Claude performs framework verification using .claude/tools/scripts/framework_validation.sh and /no-os-maxim-platform skill, optionally delegating to .claude/agents/driver-orchestrator.agent.md for workflow coordination]
 
 Claude: "Framework verification complete:
 ✅ Build system patterns validated (individual file includes, no wildcards)
@@ -315,7 +315,7 @@ After plan approval, Claude executes WITHOUT asking intermediate questions:
   - Device-specific skills (`/no-os-power`, `/no-os-adc`, `/no-os-dac`, etc.) for implementation
   - `/no-os-unit-testing` for comprehensive test coverage
   - Platform skills (`/no-os-maxim-platform`, `/no-os-stm32-platform`) for integration
-  - GitHub integration agents (`.claude/github-integration/agents/`) for autonomous workflow execution
+  - Agents (`.claude/agents/`) for autonomous workflow execution
 - **🚨 NO intermediate questions** - Don't ask about `cd`, `ls`, file paths, etc.
 - **🚨 Complete implementation** - All 6 components (driver, IIO, project, tests, docs)
 - **🚨 No "-eval" suffix** - Projects are `projects/<device>` NOT `projects/<device>-eval`
@@ -450,20 +450,20 @@ Before creating a PR, verify:
 For detailed implementation guidance, see these comprehensive guides:
 
 ### Core Development Guides
-- **[Framework Integration Guide](docs/framework-integration-guide.md)**: Complete framework verification process
+- **[Framework Integration Guide](docs/guides/framework-integration-guide.md)**: Complete framework verification process
 - **[Framework Validation Lessons](docs/framework-validation-lessons.md)**: Critical failure patterns and solutions (IMPORTANT)
 - **[Framework Troubleshooting](docs/framework-validation-troubleshooting.md)**: Quick fixes for common validation failures
-- **[Driver Templates](docs/driver-templates.md)**: Standard driver source code templates and patterns
-- **[Current Project Templates](docs/current-project-templates.md)**: Updated project templates (Makefile, builds.json, src.mk) - May 2026
-- **[Quality Assurance Guide](docs/quality-assurance-guide.md)**: QA patterns and error prevention
-- **[Git Workflow Guide](docs/git-workflow-guide.md)**: Complete git workflow and commit patterns
+- **[Driver Templates](docs/templates/driver-templates.md)**: Standard driver source code templates and patterns
+- **[Current Project Templates](docs/templates/current-project-templates.md)**: Updated project templates (Makefile, builds.json, src.mk) - May 2026
+- **[Quality Assurance Guide](docs/guides/quality-assurance-guide.md)**: QA patterns and error prevention
+- **[Git Workflow Guide](docs/guides/git-workflow-guide.md)**: Complete git workflow and commit patterns
 
 ### Specialized Guides
-- **[Testing Guide](docs/testing-guide.md)**: Unit testing with Ceedling and hardware validation
-- **[Architecture Guide](docs/architecture-guide.md)**: Repository structure and platform abstraction
+- **[Testing Guide](docs/guides/testing-guide.md)**: Unit testing with Ceedling and hardware validation
+- **[Architecture Guide](docs/guides/architecture-guide.md)**: Repository structure and platform abstraction
 
 ### Quality Analysis
-- **[6-Month Review Analysis](docs/no-os-review-pattern-analysis.md)**: Statistical quality analysis and improvement patterns
+- **[6-Month Review Analysis](docs/reference/no-os-review-pattern-analysis.md)**: Statistical quality analysis and improvement patterns
 
 ## 🎯 Claude Skills & Automation (.claude/)
 
@@ -545,7 +545,7 @@ tools/scripts/build_projects.py                        # Multi-platform builds (
 .claude/tools/pre-commit/configure-pattern-automation.sh # Setup automation
 ```
 
-### GitHub Actions Workflows (.claude/github-integration/workflows/)
+### GitHub Actions Workflows (.claude/workflows/)
 
 **🏗️ CI/CD Automation:**
 ```bash
@@ -565,7 +565,7 @@ dashboard.yml                                          # Development metrics and
 labeler.yml                                           # Automated PR labeling based on file paths and content changes
 ```
 
-### GitHub Integration Agents (.claude/github-integration/agents/)
+### Agents (.claude/agents/)
 
 **🎯 Workflow Coordination:**
 ```bash
@@ -619,7 +619,7 @@ skill-creator-zephyr.agent.md                         # Zephyr skill creation
 - Quality tools provide 62.5% automated issue prevention
 - Build tools support all major embedded platforms
 
-**🤖 GitHub Integration Agents:**
+**🤖 Agents:**
 - Use specialized agents for complex multi-phase driver development
 - Agents provide autonomous execution for specific workflow phases
 - Platform-specific agents (no-OS, Linux, Zephyr) ensure proper implementation patterns
@@ -634,7 +634,7 @@ skill-creator-zephyr.agent.md                         # Zephyr skill creation
 
 **📚 Comprehensive Coverage:**
 - 40+ specialized skills covering all aspects of embedded development
-- 16 GitHub integration agents for autonomous workflow execution
+- 16 specialized agents for autonomous workflow execution
 - 6 GitHub Actions workflows for automated CI/CD and quality assurance
 - Cross-platform support (no-OS, Linux, Zephyr)
 - Complete development lifecycle (analysis → implementation → testing → quality → deployment)

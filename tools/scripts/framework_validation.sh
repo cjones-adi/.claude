@@ -209,7 +209,7 @@ else
     echo "   - Platform config: Include common directory and DMA sources"
     echo ""
     echo "📖 Detailed troubleshooting:"
-    echo "   docs/framework-validation-troubleshooting.md"
-    echo "   docs/framework-validation-lessons.md"
+    echo "   .claude/docs/framework-validation-troubleshooting.md"
+    echo "   .claude/docs/framework-validation-lessons.md"
     exit 1
 fi

@@ -70,7 +70,7 @@ validate_tools() {
     echo_header "Validating Development Tools"
 
     # Check for pre-commit tools
-    if [ -f "tools/pre-commit/pre-commit" ]; then
+    if [ -f ".claude/tools/pre-commit/pre-commit" ]; then
         echo_success "Pre-commit hook found"
     else
         echo_error "Pre-commit hook not found"
@@ -81,7 +81,7 @@ validate_tools() {
         echo_success "Pre-commit hook installed"
     else
         echo_warning "Pre-commit hook not installed"
-        echo_info "Run: ./tools/pre-commit/install-hooks.sh"
+        echo_info "Run: ./.claude/tools/pre-commit/install-hooks.sh"
     fi
 
     # Check for required tools
@@ -114,7 +114,7 @@ validate_branch_setup() {
     echo_info "Current branch: $current_branch"
 
     # Test branch name validation
-    if bash tools/pre-commit/check-branch-name.sh > /dev/null 2>&1; then
+    if bash .claude/tools/pre-commit/check-branch-name.sh > /dev/null 2>&1; then
         echo_success "Branch name follows convention"
     else
         echo_warning "Branch name doesn't follow dev/<device> convention"
@@ -173,14 +173,14 @@ display_summary() {
 
     # Tools status
     echo_info "Pre-commit hooks: $([ -f ".git/hooks/pre-commit" ] && echo "✅ Installed" || echo "❌ Not installed")"
-    echo_info "Branch validation: $([ -f "tools/pre-commit/check-branch-name.sh" ] && echo "✅ Available" || echo "❌ Missing")"
-    echo_info "Template generator: $([ -f "tools/pre-commit/create-device-template.py" ] && echo "✅ Available" || echo "❌ Missing")"
+    echo_info "Branch validation: $([ -f ".claude/tools/pre-commit/check-branch-name.sh" ] && echo "✅ Available" || echo "❌ Missing")"
+    echo_info "Template generator: $([ -f ".claude/tools/pre-commit/create-device-template.py" ] && echo "✅ Available" || echo "❌ Missing")"
 
     echo ""
     echo_header "Quick Start"
     echo_info "1. Sync with upstream: git fetch upstream && git rebase upstream/main"
-    echo_info "2. Create new branch: ./tools/pre-commit/new-dev-branch.sh <device>"
-    echo_info "3. Generate template: python3 tools/pre-commit/create-device-template.py <device> <type>"
+    echo_info "2. Create new branch: ./.claude/tools/pre-commit/new-dev-branch.sh <device>"
+    echo_info "3. Generate template: ./.claude/tools/pre-commit/create-device-template.py <device> <type>"
     echo ""
 }
 

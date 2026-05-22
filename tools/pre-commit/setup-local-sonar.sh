@@ -478,7 +478,7 @@ main() {
     echo "  • Quick check script (tools/pre-commit/quick-sonar-check.sh)"
     echo ""
     echo_info "🚀 Quick start:"
-    echo "  1. Set token: export SONAR_TOKEN=YOUR_SONARCLOUD_TOKEN_HERE"
+    echo "  1. Set token: export SONAR_TOKEN=your_sonarcloud_token_here"
     echo "  2. Quick check: ./tools/pre-commit/quick-sonar-check.sh"
     echo "  3. Full analysis: ./tools/pre-commit/run-local-sonar.sh --changed-only"
     echo ""

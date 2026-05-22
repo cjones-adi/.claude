@@ -9,7 +9,11 @@ This package contains the complete production-ready development workflow, automa
 .claude/
 ├── README.md                    # This file - Complete workflow overview
 ├── CLAUDE.md                    # Main Claude Code integration guide (comprehensive)
-├── skills/                     # 40+ Specialized skill library
+├── gen-ai-agents/              # Git submodule (source of truth)
+│   ├── agents/                # 16 specialized driver agents
+│   └── skills/                # 40+ specialized skills
+├── agents -> gen-ai-agents/agents/   # Symlink to agents
+├── skills -> gen-ai-agents/skills/   # Symlink to skills
 │   ├── no-os-*/               # no-OS platform and device skills
 │   ├── linux-*/               # Linux kernel development skills
 │   ├── zephyr-*/               # Zephyr RTOS development skills
@@ -35,60 +39,67 @@ This package contains the complete production-ready development workflow, automa
 │       ├── validate-setup.sh            # Environment verification
 │       ├── new-dev-branch.sh            # Branch automation
 │       └── create-device-template.py    # Device template generation
-├── github-integration/         # GitHub Actions & autonomous agents
-│   ├── agents/                # 16 Specialized automation agents
-│   │   ├── driver-orchestrator.agent.md         # Workflow coordination
-│   │   ├── driver-planner-*.agent.md            # Planning agents (no-OS/Linux/Zephyr)
-│   │   ├── driver-coder-*.agent.md              # Implementation agents
-│   │   ├── driver-documenter-*.agent.md         # Documentation agents
-│   │   ├── driver-unit-tester-*.agent.md        # Testing agents
-│   │   ├── driver-code-reviewer-*.agent.md      # Review agents
-│   │   └── skill-creator-*.agent.md             # Skill development agents
-│   └── workflows/             # 6 GitHub Actions workflows
-│       ├── ci-enhanced.yml               # Enhanced CI with metrics
-│       ├── sonarcloud.yml                # Automated static analysis
-│       ├── update-review-patterns.yml    # Weekly pattern updates
-│       ├── security-analysis.yml         # Security vulnerability scanning
-│       ├── dashboard.yml                 # Development metrics automation
-│       └── labeler.yml                  # Automated PR labeling
+├── workflows/                  # GitHub Actions workflows (6 files)
+│   ├── ci-enhanced.yml                # Enhanced CI with metrics
+│   ├── sonarcloud.yml                 # Automated static analysis
+│   ├── update-review-patterns.yml     # Weekly pattern updates
+│   ├── security-analysis.yml          # Security vulnerability scanning
+│   ├── dashboard.yml                  # Development metrics automation
+│   └── labeler.yml                    # Automated PR labeling
 ├── config/                     # Configuration files
 │   └── sonar-project.properties         # SonarCloud project configuration
 └── data/                       # Analysis and pattern data
     └── review_patterns_6month.json      # 6-month analysis (144 PRs, 507 comments)
 ```
 
+## 🚀 New User? Start Here!
+
+**First time using this workflow?** Follow the complete onboarding guide:
+
+📖 **[Getting Started Guide](docs/GETTING_STARTED.md)** - Complete step-by-step tutorial covering:
+- Initial setup and environment configuration
+- Fork workflow setup
+- Starting your first AI-assisted driver development
+- Understanding the complete workflow
+- Troubleshooting common issues
+
+**Already familiar with the workflow?** Continue with Quick Start below.
+
+---
+
 ## Quick Start
 
-### Simple Installation
+### Installation
 ```bash
-# 1. Copy the entire .claude directory to your target repository
-cp -r .claude /path/to/target-repository/
+# 1. Navigate to your no-OS repository
+cd /path/to/your/no-OS
 
-# 2. Navigate to the target repository and make scripts executable
-cd /path/to/target-repository
+# 2. Clone the .claude repository
+git clone <.claude-repository-url> .claude
+
+# 3. Initialize submodules (for agents and skills)
+cd .claude
+git submodule update --init --recursive
+cd ..
+
+# 4. Make scripts executable
 chmod +x .claude/tools/scripts/framework_validation.sh
 chmod +x .claude/tools/pre-commit/install-hooks.sh
 chmod +x .claude/tools/pre-commit/validate-setup.sh
 chmod +x .claude/tools/pre-commit/new-dev-branch.sh
 
-# 3. Install pre-commit hooks and quality automation
-.claude/tools/pre-commit/install-hooks.sh
+# 5. Install pre-commit hooks and quality automation
+./.claude/tools/pre-commit/install-hooks.sh
 
-# 4. Verify the complete setup
-.claude/tools/pre-commit/validate-setup.sh
+# 6. Verify the complete setup
+./.claude/tools/pre-commit/validate-setup.sh
 ```
 
 That's it! The entire development workflow is now ready to use.
 
-### Optional: GitHub Integration
-```bash
-# Copy GitHub workflows to .github directory (for CI/CD automation)
-mkdir -p .github
-cp -r .claude/github-integration/workflows .github/
-
-# GitHub agents remain in .claude/github-integration/agents/ (no copy needed)
-# Skills remain in .claude/skills/ (no copy needed)
-```
+**Note**: Agents and skills are accessed via symlinks:
+- `.claude/agents/` → `gen-ai-agents/agents/`
+- `.claude/skills/` → `gen-ai-agents/skills/`
 
 ## Core Components
 
@@ -123,7 +134,7 @@ cp -r .claude/github-integration/workflows .github/
 - **Linux Kernel**: `/linux-iio`, `/linux-pmbus`, `/linux-hwmon`, `/linux-devicetree`
 - **Zephyr RTOS**: `/zephyr-*` (ADC, DAC, GPIO, sensor, build-system, etc.)
 
-### 🤖 GitHub Integration Agents (16 Specialized Agents)
+### 🤖 Agents (16 Specialized Agents)
 - **Workflow Coordination**: `driver-orchestrator.agent.md` - Complete workflow management
 - **Planning Agents**: Platform-specific planning (no-OS, Linux, Zephyr)
 - **Implementation Agents**: Autonomous coding for each platform
@@ -161,23 +172,33 @@ cp -r .claude/github-integration/workflows .github/
 - **Best Practices**: Linux kernel compliance, security standards, testing strategies
 - **Analysis Documentation**: 6-month statistical review analysis and improvement metrics
 
-## Verification Commands
+## Optional Tools
 
-After installation, verify the setup:
+### SonarCloud Local Analysis (Recommended)
+
+For enhanced static analysis and security scanning on your local machine:
 
 ```bash
-# Validate environment setup
-.claude/tools/pre-commit/validate-setup.sh
+# One-time setup
+./.claude/tools/pre-commit/setup-local-sonar.sh
 
-# Test framework validation (MANDATORY before any development)
-.claude/tools/scripts/framework_validation.sh test_device power maxim
-
-# Verify pre-commit hooks
-git add . && git commit -m "test: Verify pre-commit hooks" --dry-run
-
-# Check SonarCloud integration (if configured)
-.claude/tools/pre-commit/setup-local-sonar.sh --check
+# Quick analysis on changed files
+export SONAR_TOKEN="your_sonarcloud_token"
+./.claude/tools/pre-commit/quick-sonar-check.sh
 ```
+
+**Benefits**:
+- 🔍 Local static analysis before pushing
+- 🔒 Security vulnerability detection
+- 📊 Code quality metrics and insights
+- ⚡ Analyzes only changed files (fast)
+
+**Documentation**:
+- Complete setup guide: [tools/pre-commit/sonar-local-guide.md](tools/pre-commit/sonar-local-guide.md)
+- Integration guide: [tools/pre-commit/sonarcloud-integration.md](tools/pre-commit/sonarcloud-integration.md)
+- Get your token: [SonarCloud Security](https://sonarcloud.io/account/security/)
+
+---
 
 ## Key Features
 
@@ -217,10 +238,10 @@ git add . && git commit -m "test: Verify pre-commit hooks" --dry-run
 ## Support
 
 For detailed implementation guidance, see:
-- `.claude/docs/development-environment-setup.md` - Complete setup guide
-- `.claude/docs/quick-start-reference.md` - Daily command reference
+- `.claude/docs/guides/development-environment-setup.md` - Complete setup guide
+- `.claude/docs/reference/quick-start-reference.md` - Daily command reference
 - `.claude/docs/framework-validation-troubleshooting.md` - Common issue fixes
-- `.claude/docs/claude-code-integration-guide.md` - Enhanced Claude workflow
+- `.claude/docs/guides/claude-code-integration-guide.md` - Enhanced Claude workflow
 
 ## Complete Toolkit Inventory
 
@@ -242,7 +263,7 @@ For detailed implementation guidance, see:
 - **1 Testing Agent**: Unit testing with 80%+ coverage
 - **2 Skill Agents**: Continuous skill library development
 
-### 🔄 GitHub Integration (6 Workflows)
+### 🔄 GitHub Actions Workflows (6 Workflows)
 - **Enhanced CI/CD**: Multi-platform builds with metrics
 - **SonarCloud Analysis**: Automated static analysis and security
 - **Pattern Updates**: Weekly automated review pattern learning

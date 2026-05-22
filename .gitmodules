@@ -1,0 +1,3 @@
+[submodule "gen-ai-agents"]
+	path = gen-ai-agents
+	url = https://github.com/Edelweise-Escala_adi/gen-ai-agents.git

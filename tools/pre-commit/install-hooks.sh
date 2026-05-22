@@ -6,7 +6,7 @@ set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 HOOKS_DIR="$REPO_ROOT/.git/hooks"
-TOOLS_DIR="$REPO_ROOT/tools/pre-commit"
+TOOLS_DIR="$REPO_ROOT/.claude/tools/pre-commit"
 
 echo "🔧 Installing no-OS pre-commit hooks..."
 
@@ -42,4 +42,4 @@ echo "  • Use 'git commit --no-verify' to bypass hooks if needed"
 echo ""
 echo "🚀 Ready for development!"
 echo ""
-echo "💡 Run './tools/pre-commit/validate-setup.sh' to verify your complete environment"
+echo "💡 Run './.claude/tools/pre-commit/validate-setup.sh' to verify your complete environment"

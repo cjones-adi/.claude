@@ -134,8 +134,8 @@ main() {
     echo_success "Created and switched to branch: $branch_name"
     echo ""
     echo "📋 Next steps:"
-    echo "1. Install pre-commit hooks (if not done): ./tools/pre-commit/install-hooks.sh"
-    echo "2. Create driver template: python3 tools/pre-commit/create-device-template.py $device_name <type>"
+    echo "1. Install pre-commit hooks (if not done): ./.claude/tools/pre-commit/install-hooks.sh"
+    echo "2. Create driver template: ./.claude/tools/pre-commit/create-device-template.py $device_name <type>"
     echo "3. Start development and commit with signed-off commits: git commit -s"
     echo "4. Push to your fork when ready: git push origin $branch_name"
     echo "5. Create PR to upstream: gh pr create --repo analogdevicesinc/no-OS"
@@ -145,11 +145,11 @@ main() {
     case "$device_name" in
         adm127*|ltc29*|max20*|ltc38*|ltc70*)
             echo "💡 PMBus device detected. Create template with:"
-            echo "   python3 tools/pre-commit/create-device-template.py $device_name pmbus --with-project"
+            echo "   ./.claude/tools/pre-commit/create-device-template.py $device_name pmbus --with-project"
             ;;
         ad70*|ad71*|ad72*|ad73*|ad74*|ad76*|ad77*|ad78*|ad79*|adaq*)
             echo "💡 ADC device detected. Create template with:"
-            echo "   python3 tools/pre-commit/create-device-template.py $device_name adc --with-project"
+            echo "   ./.claude/tools/pre-commit/create-device-template.py $device_name adc --with-project"
             ;;
         ad41*|ad42*|ad50*|ad51*|ad52*|ad53*|ad54*)
             echo "💡 DAC device detected. Consider creating DAC template (not yet implemented)"
