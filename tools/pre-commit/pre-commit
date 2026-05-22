@@ -83,6 +83,8 @@ check_astyle() {
 
     # Check each staged C/C++ file
     local style_issues=false
+    local style_files=()
+
     for file in $c_files; do
         if [ -f "$file" ]; then
             # Create a temporary copy to test formatting
@@ -90,17 +92,47 @@ check_astyle() {
             ./build/astyle/build/gcc/bin/astyle --options=ci/astyle_config "$file.tmp" > /dev/null 2>&1
 
             if ! cmp -s "$file" "$file.tmp"; then
-                echo_error "Code style issues in: $file"
                 style_issues=true
+                style_files+=("$file")
+
+                # Show what would change
+                echo ""
+                echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                echo_error "Code style issues in: $file"
+                echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                echo ""
+                echo_info "Differences (current vs. formatted):"
+                diff -u "$file" "$file.tmp" | head -100 | sed 's/^/  /' || true
+                echo ""
+                echo_info "Common style issues:"
+                echo_info "  • Indentation: Use tabs (not spaces)"
+                echo_info "  • Braces: Opening brace on same line for functions"
+                echo_info "  • Spacing: Space after keywords (if, for, while, switch)"
+                echo_info "  • Operators: Spaces around binary operators (=, +, -, etc.)"
+                echo ""
             fi
             rm -f "$file.tmp"
         fi
     done
 
     if [ "$style_issues" = "true" ]; then
-        echo_error "Code style check failed!"
-        echo_info "Run: git diff --cached --name-only | grep -E '\.(c|h)$' | xargs -I {} ./build/astyle/build/gcc/bin/astyle --options=ci/astyle_config {}"
-        echo_info "Then stage the corrected files: git add <files>"
+        echo ""
+        echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo_error "ASTYLE CODE FORMATTING REQUIRED"
+        echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo_info "🔧 To automatically fix all style issues:"
+        echo ""
+        for file in "${style_files[@]}"; do
+            echo_info "  ./build/astyle/build/gcc/bin/astyle --options=ci/astyle_config $file"
+        done
+        echo ""
+        echo_info "Or fix all staged files at once:"
+        echo_info "  git diff --cached --name-only | grep -E '\.(c|h)$' | xargs -I {} ./build/astyle/build/gcc/bin/astyle --options=ci/astyle_config {}"
+        echo ""
+        echo_info "After formatting, stage the changes:"
+        echo_info "  git add ${style_files[*]}"
+        echo ""
         return 1
     fi
 
@@ -128,8 +160,8 @@ check_cppcheck() {
         return 0
     fi
 
-    # Run cppcheck on staged files only
-    local cppcheck_opts="--quiet --force --error-exitcode=1 --enable=warning,style,performance"
+    # Run cppcheck on staged files only (verbose output)
+    local cppcheck_opts="--force --error-exitcode=1 --enable=warning,style,performance --template=gcc"
 
     if [ -f ".cppcheckignore" ]; then
         cppcheck_opts="$cppcheck_opts --suppressions-list=.cppcheckignore"
@@ -139,11 +171,73 @@ check_cppcheck() {
         cppcheck_opts="$cppcheck_opts --library=./ci/config.cppcheck"
     fi
 
-    if echo "$c_files" | xargs cppcheck $cppcheck_opts 2>/dev/null; then
+    # Capture cppcheck output
+    local cppcheck_output=$(mktemp)
+    echo "$c_files" | xargs cppcheck $cppcheck_opts 2>&1 | tee "$cppcheck_output"
+    local cppcheck_exit=${PIPESTATUS[1]}  # Get exit code of cppcheck (second command in pipe)
+
+    if [ $cppcheck_exit -eq 0 ]; then
+        rm -f "$cppcheck_output"
         echo_success "Static analysis passed"
         return 0
     else
-        echo_error "Static analysis found issues"
+        echo ""
+        echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo_error "CPPCHECK STATIC ANALYSIS FINDINGS"
+        echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+        # Parse and categorize errors with helpful suggestions
+        while IFS= read -r line; do
+            if [[ "$line" =~ ":" ]]; then
+                echo_error "$line"
+
+                # Provide correction hints based on common error patterns
+                if [[ "$line" =~ "unusedVariable" ]] || [[ "$line" =~ "unreadVariable" ]]; then
+                    echo_info "  💡 Fix: Remove unused variable or mark as unused with (void)variable_name;"
+                elif [[ "$line" =~ "uninitvar" ]]; then
+                    echo_info "  💡 Fix: Initialize variable before use (e.g., int var = 0;)"
+                elif [[ "$line" =~ "nullPointer" ]]; then
+                    echo_info "  💡 Fix: Add NULL check before dereferencing pointer"
+                elif [[ "$line" =~ "memleak" ]]; then
+                    echo_info "  💡 Fix: Ensure free()/no_os_free() is called for all allocated memory"
+                elif [[ "$line" =~ "resourceLeak" ]]; then
+                    echo_info "  💡 Fix: Close file/resource handles in all code paths (including error paths)"
+                elif [[ "$line" =~ "arrayIndexOutOfBounds" ]]; then
+                    echo_info "  💡 Fix: Verify array index is within bounds (0 to size-1)"
+                elif [[ "$line" =~ "bufferAccessOutOfBounds" ]]; then
+                    echo_info "  💡 Fix: Check buffer size before access; ensure index < buffer_size"
+                elif [[ "$line" =~ "uninitStructMember" ]]; then
+                    echo_info "  💡 Fix: Initialize all struct members or use memset() to zero"
+                elif [[ "$line" =~ "invalidPrintfArgType" ]]; then
+                    echo_info "  💡 Fix: Use correct format specifier (%d for int, %u for unsigned, %p for pointer)"
+                elif [[ "$line" =~ "missingReturn" ]]; then
+                    echo_info "  💡 Fix: Add return statement with appropriate value"
+                elif [[ "$line" =~ "variableScope" ]]; then
+                    echo_info "  💡 Fix: Move variable declaration to innermost scope where it's used"
+                elif [[ "$line" =~ "constParameter" ]]; then
+                    echo_info "  💡 Fix: Add 'const' qualifier to parameter that isn't modified"
+                elif [[ "$line" =~ "shadowVariable" ]]; then
+                    echo_info "  💡 Fix: Rename local variable to avoid shadowing outer scope variable"
+                fi
+                echo ""
+            fi
+        done < "$cppcheck_output"
+
+        rm -f "$cppcheck_output"
+
+        echo_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo_info "📖 Common Cppcheck Error References:"
+        echo_info "  • unusedVariable/unreadVariable: Variable declared but never read"
+        echo_info "  • uninitvar: Variable used before initialization"
+        echo_info "  • nullPointer: Potential NULL pointer dereference"
+        echo_info "  • memleak: Allocated memory not freed"
+        echo_info "  • resourceLeak: File/resource handle not closed"
+        echo ""
+        echo_info "To suppress false positives, add to .cppcheckignore:"
+        echo_info "  *:file.c:123  (suppress all errors on line 123 of file.c)"
+        echo_info "  errorType:file.c:123  (suppress specific error type)"
+        echo ""
         return 1
     fi
 }
@@ -158,6 +252,7 @@ check_documentation() {
 
     local doc_issues=false
     local c_files=$(get_staged_c_files)
+    local has_warnings=false
 
     for file in $c_files; do
         if [[ "$file" == *.h ]] && [ -f "$file" ]; then
@@ -166,15 +261,55 @@ check_documentation() {
             local expected_guard="__${guard_name}__"
 
             if ! grep -q "#ifndef $expected_guard" "$file" || ! grep -q "#define $expected_guard" "$file"; then
-                echo_warning "Header guard format issue in $file (expected: $expected_guard)"
+                if [ "$has_warnings" = "false" ]; then
+                    echo ""
+                    echo_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo_warning "DOCUMENTATION WARNINGS"
+                    echo_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    has_warnings=true
+                fi
+                echo ""
+                echo_warning "Header guard format issue in: $file"
+                echo_info "  Expected format:"
+                echo_info "    #ifndef $expected_guard"
+                echo_info "    #define $expected_guard"
+                echo_info "    ... (header content) ..."
+                echo_info "    #endif // $expected_guard"
+                echo ""
             fi
 
             # Check for basic Doxygen documentation on public functions
             if grep -q "^int.*(" "$file" && ! grep -q "@brief\|@param\|@return" "$file"; then
-                echo_warning "Missing Doxygen documentation in $file"
+                if [ "$has_warnings" = "false" ]; then
+                    echo ""
+                    echo_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo_warning "DOCUMENTATION WARNINGS"
+                    echo_warning "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    has_warnings=true
+                fi
+                echo ""
+                echo_warning "Missing Doxygen documentation in: $file"
+                echo_info "  Add documentation for public functions:"
+                echo_info "    /**"
+                echo_info "     * @brief Brief description of function"
+                echo_info "     * @param param_name - Description of parameter"
+                echo_info "     * @return Description of return value"
+                echo_info "     */"
+                echo_info "    int function_name(type param_name);"
+                echo ""
             fi
         fi
     done
+
+    if [ "$has_warnings" = "true" ]; then
+        echo ""
+        echo_info "📖 Documentation best practices:"
+        echo_info "  • Use Doxygen-style comments (/** ... */)"
+        echo_info "  • Document all public APIs (@brief, @param, @return)"
+        echo_info "  • Use proper header guards in all .h files"
+        echo_info "  • These are warnings only - commit will proceed"
+        echo ""
+    fi
 
     echo_success "Documentation check completed"
     return 0
@@ -217,10 +352,10 @@ check_review_patterns() {
 
     echo_info "Running automated review checks..."
 
-    if [ -f "tools/pre-commit/review-checker.py" ]; then
+    if [ -f ".claude/tools/pre-commit/review-checker.py" ]; then
         local c_files=$(get_staged_c_files)
         if [ -n "$c_files" ]; then
-            if echo "$c_files" | xargs python3 tools/pre-commit/review-checker.py; then
+            if echo "$c_files" | xargs python3 .claude/tools/pre-commit/review-checker.py; then
                 echo_success "Review checks passed"
             else
                 echo_warning "Review checker found potential issues"
@@ -243,8 +378,8 @@ check_branch_name() {
 
     echo_info "Checking branch naming convention..."
 
-    if [ -f "tools/pre-commit/check-branch-name.sh" ]; then
-        if bash tools/pre-commit/check-branch-name.sh; then
+    if [ -f ".claude/tools/pre-commit/check-branch-name.sh" ]; then
+        if bash .claude/tools/pre-commit/check-branch-name.sh; then
             return 0
         else
             return 1
