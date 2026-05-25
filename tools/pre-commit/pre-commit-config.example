@@ -46,3 +46,8 @@ IGNORE_PATTERNS="libraries/ build/ .git/"
 # For IIO development:
 # IIO_DOCUMENTATION_REQUIRED=true
 # LINUX_COMPATIBILITY_CHECK=true
+
+# SonarCloud integration
+ENABLE_SONAR_CHECK=false     # Local SonarCloud analysis (optional)
+SONAR_MODE=preview          # preview or publish
+SONAR_CHANGED_ONLY=true     # Analyze only changed files vs upstream

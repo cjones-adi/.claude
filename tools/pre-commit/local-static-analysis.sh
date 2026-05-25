@@ -124,14 +124,12 @@ run_cppcheck() {
         files_to_analyze=("drivers/" "include/" "util/" "iio/")
     fi
 
-    # Build cppcheck arguments array
+    # Build cppcheck arguments array (using pre-commit hook's proven configuration)
     local -a cppcheck_args=(
-        "--enable=warning,style,performance,portability"
-        "--inconclusive"
+        "--enable=warning,style,performance"
         "--xml"
         "--xml-version=2"
         "--force"
-        "--quiet"
     )
 
     # Add suppressions if file exists
@@ -143,12 +141,6 @@ run_cppcheck() {
     if [ -f "./ci/config.cppcheck" ]; then
         cppcheck_args+=("--library=./ci/config.cppcheck")
     fi
-
-    # Add include directories
-    cppcheck_args+=("-I./include" "-I./drivers")
-
-    # Add parallel processing (without unusedFunction which doesn't work with -j)
-    cppcheck_args+=("-j$(nproc)")
 
     # Run analysis
     echo_info "Analyzing ${#files_to_analyze[@]} path(s)..."

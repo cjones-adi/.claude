@@ -89,8 +89,8 @@ install_scanner() {
 create_project_config() {
     echo_info "Creating project configuration..."
 
-    # Go back to repo root
-    cd ../..
+    # Go back to repo root (from .claude/tools/sonar -> need 3 levels up)
+    cd ../../..
 
     # Copy comprehensive configuration from template
     if [ -f ".claude/config/sonar-project.properties" ]; then

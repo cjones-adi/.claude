@@ -33,20 +33,17 @@ usage() {
     echo ""
     echo "Options:"
     echo "  --changed-only     Analyze only files changed vs upstream/main"
+    echo "  --preview         Run in preview mode (no upload to SonarCloud)"
     echo "  --export FILE     Export results to file for Claude review"
     echo "  --help           Show this help"
     echo ""
     echo "Environment variables:"
     echo "  SONAR_TOKEN      Your SonarCloud authentication token"
     echo ""
-    echo "Note:"
-    echo "  Analysis results are uploaded to SonarCloud on your branch."
-    echo "  Branch analysis is isolated and won't affect main branch quality."
-    echo ""
     echo "Examples:"
     echo "  $0                                    # Full analysis"
     echo "  $0 --changed-only                     # Only changed files"
-    echo "  $0 --changed-only --export results.json  # Changed files + export"
+    echo "  $0 --preview --export claude-report.json  # Preview + export"
 }
 
 check_prerequisites() {
@@ -105,13 +102,19 @@ get_changed_files() {
 }
 
 run_analysis() {
-    local changed_only="$1"
-    local export_file="$2"
+    local mode="$1"
+    local changed_only="$2"
+    local export_file="$3"
 
     echo_info "Running SonarCloud analysis..."
 
     # Prepare scanner arguments
     scanner_args=("-Dsonar.login=$SONAR_TOKEN")
+
+    if [ "$mode" = "preview" ]; then
+        scanner_args+=("-Dsonar.analysis.mode=preview")
+        echo_info "Running in preview mode (no upload)"
+    fi
 
     if [ "$changed_only" = "true" ]; then
         changed_files=$(get_changed_files)
@@ -160,6 +163,7 @@ process_results() {
 }
 
 main() {
+    local mode="publish"
     local changed_only="false"
     local export_file=""
 
@@ -168,6 +172,10 @@ main() {
         case $1 in
             --changed-only)
                 changed_only="true"
+                shift
+                ;;
+            --preview)
+                mode="preview"
                 shift
                 ;;
             --export)
@@ -190,13 +198,17 @@ main() {
     echo ""
 
     check_prerequisites
-    run_analysis "$changed_only" "$export_file"
+    run_analysis "$mode" "$changed_only" "$export_file"
     process_results "$export_file"
 
     echo ""
     echo_success "🎉 Analysis completed!"
-    echo_info "Results uploaded to SonarCloud (branch: $(git branch --show-current))"
-    echo_info "Branch analysis is isolated from main branch quality gate"
+
+    if [ "$mode" = "preview" ]; then
+        echo_info "Results are local only (preview mode)"
+    else
+        echo_info "Results uploaded to SonarCloud"
+    fi
 
     if [ -f "claude-sonar-review.json" ]; then
         echo_info "📄 Share claude-sonar-review.json with Claude for detailed analysis"

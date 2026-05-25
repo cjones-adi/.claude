@@ -9,15 +9,20 @@
 ## 🚀 Quick Start - Changed Files Only
 
 ```bash
-# Check only files you changed vs origin/main
+# Check only YOUR changes since branch divergence (default)
 ./.claude/tools/pre-commit/ci-check-changed.sh
 
-# Check vs different base
-./.claude/tools/pre-commit/ci-check-changed.sh upstream/main
+# Check vs different base branch
+./.claude/tools/pre-commit/ci-check-changed.sh origin/main
+
+# Check ALL differences (includes rebase changes)
+./.claude/tools/pre-commit/ci-check-changed.sh --all-changes
 
 # Check last N commits
 ./.claude/tools/pre-commit/ci-check-changed.sh HEAD~5
 ```
+
+**Default behavior**: Uses `upstream/main` as base and shows only YOUR changes since branch divergence (excludes files pulled during rebase)
 
 **Time**: ~10-30 seconds (vs 2-3 minutes for full repo)
 
@@ -62,9 +67,10 @@ export NUM_JOBS=$(nproc)
 
 **Changed files only:**
 ```bash
-# Automatically done by ci-check-changed.sh
+# Automatically done by ci-check-changed.sh (uses merge-base by default)
 # Or manually:
-git diff --name-only origin/main...HEAD | grep -E '\.(c|h)$' | while read file; do
+MERGE_BASE=$(git merge-base upstream/main HEAD)
+git diff --name-only $MERGE_BASE..HEAD | grep -E '\.(c|h)$' | while read file; do
     astyle --options=ci/astyle_config "$file"
 done
 ```
@@ -80,8 +86,9 @@ done
 
 **Changed files only:**
 ```bash
-# Get your changed files
-CHANGED_FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.(c|h)$')
+# Get your changed files (uses merge-base to exclude rebase changes)
+MERGE_BASE=$(git merge-base upstream/main HEAD)
+CHANGED_FILES=$(git diff --name-only $MERGE_BASE..HEAD | grep -E '\.(c|h)$')
 
 # Run cppcheck only on those files
 cppcheck \
@@ -125,7 +132,9 @@ git status
 **Output:**
 ```
 🔍 CI Check - Changed Files Only
-Base: origin/main
+Mode: Only YOUR changes since branch divergence
+Merge-base: 61a204ed9 doc: Add Versal Variables N/A known issue to Vitis 2025 guide
+Your commits: 8
 
 Found 3 changed C/C++ file(s):
   • drivers/power/ltm4700/ltm4700.c

@@ -18,13 +18,16 @@ docs/
 ├── framework-validation-lessons.md          # Critical failure patterns and solutions
 ├── framework-validation-troubleshooting.md  # Quick fixes for validation failures
 │
-├── guides/                                  # Workflow and How-To Documentation (11 files)
+├── guides/                                  # Workflow and How-To Documentation (13 files)
 │   ├── architecture-guide.md                # Repository structure and platform abstraction
+│   ├── ci-check-changed-files.md            # Fast CI checking on changed files only
+│   ├── ci-check-recommendations.md          # CI issue recommendations and solutions
 │   ├── claude-code-integration-guide.md     # Enhanced Claude workflow integration
 │   ├── development-environment-setup.md     # Complete development environment setup
 │   ├── developer-propagation-guide.md       # Team onboarding and workflow propagation
 │   ├── framework-integration-guide.md       # Framework integration and validation
 │   ├── git-workflow-guide.md                # Complete git workflow and commit patterns
+│   ├── local-ci-validation.md               # Local CI validation before push
 │   ├── LOCAL_VS_CLOUD_ANALYSIS.md          # Static analysis workflow guide
 │   ├── new-driver-workflow.md               # Step-by-step driver development process
 │   ├── quality-assurance-guide.md           # QA patterns and error prevention
@@ -67,18 +70,23 @@ tools/
 └── pre-commit/
     ├── auto-update-patterns.py              # Automated pattern learning
     ├── check-branch-name.sh                 # Branch naming validation
+    ├── ci-check-changed.sh                  # Fast CI checks on changed files only
     ├── commit-msg                           # Git commit message hooks
     ├── configure-pattern-automation.sh      # Pattern automation setup
     ├── create-device-template.py            # Device-specific template generation
     ├── extract-sonarcloud-data.sh           # SonarCloud data extraction
     ├── install-hooks.sh                     # Pre-commit hook installation
+    ├── local-ci-check.sh                    # Complete local CI validation wrapper
+    ├── local-static-analysis.sh             # Local static analysis runner
     ├── new-dev-branch.sh                    # Automated development branch creation
     ├── pre-commit                           # Main pre-commit hook script
     ├── pre-commit-config.example            # Configuration template
+    ├── quick-sonarcloud-upload.sh           # Quick SonarCloud upload
     ├── review-checker.py                    # Real-time review pattern detection
     ├── setup-auto-patterns.sh               # Pattern automation configuration
     ├── setup-local-sonar.sh                 # Local SonarCloud setup
     ├── sonar-report-analyzer.py             # SonarCloud report analysis
+    ├── upload-to-sonarcloud.sh              # SonarCloud upload automation
     ├── validate-setup.sh                    # Environment validation
     ├── webhook-pattern-server.py            # Webhook automation server
     └── *.md                                 # Tool documentation and guides
