@@ -181,7 +181,7 @@ python3 tools/pre-commit/auto-update-patterns.py --full   # Full re-analysis
 ```
 
 ### 4. SonarCloud Integration
-**Location**: `tools/pre-commit/run-local-sonar.sh`
+**Location**: `tools/pre-commit/upload-to-sonarcloud.sh`
 **Purpose**: Advanced code quality analysis with AI integration
 
 **Key Features:**
@@ -193,10 +193,10 @@ python3 tools/pre-commit/auto-update-patterns.py --full   # Full re-analysis
 **Usage:**
 ```bash
 # Quick check
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Full analysis with Claude export
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export analysis.json
 
 # Process for Claude review
 python3 tools/pre-commit/sonar-report-analyzer.py analysis.json --export-claude claude-review.json
@@ -266,7 +266,7 @@ ls -la review_patterns_6month.json
 # Should show: 23KB+ file with recent timestamp
 
 # 5. SonarCloud works (if configured)
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 # Should show: analysis results without errors
 ```
 

@@ -50,14 +50,14 @@ python3 tools/pre-commit/create-device-template.py adm1275 pmbus --with-project 
 ### Quality Assurance Workflow
 ```bash
 # Daily code quality check
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Enhanced review checker (detects 62.5% of common issues)
 python3 tools/pre-commit/review-checker.py <file.c>
 
 # Full SonarCloud analysis
 export SONAR_TOKEN="your_sonarcloud_token_here"
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export analysis.json
 ```
 
 ### Build and Test

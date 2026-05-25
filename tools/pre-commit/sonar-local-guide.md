@@ -12,7 +12,7 @@ Complete guide for running SonarCloud analysis locally on your development branc
 export SONAR_TOKEN="your_sonarcloud_token_here"
 
 # 3. Quick check of your changes
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 ```
 
 ## 📋 What Gets Installed
@@ -21,7 +21,7 @@ The setup script installs:
 
 - **SonarCloud Scanner** (`tools/sonar/sonar-scanner`) - Local analysis engine
 - **Project Configuration** (`sonar-project.properties`) - Your project settings
-- **Analysis Scripts** (`run-local-sonar.sh`, `quick-sonar-check.sh`) - Easy-to-use commands
+- **Analysis Scripts** (`upload-to-sonarcloud.sh`, `quick-sonarcloud-upload.sh`) - Easy-to-use commands
 - **Integration** - Works with existing pre-commit tools
 
 ## 🔧 Usage Scenarios
@@ -32,7 +32,7 @@ The setup script installs:
 
 ```bash
 # Check only files you've changed
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Output:
 # 🚀 Quick SonarCloud check on your changes...
@@ -50,7 +50,7 @@ The setup script installs:
 ```bash
 # Analyze only changed files vs upstream/main
 export SONAR_TOKEN="your_sonarcloud_token_here"
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export my-analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export my-analysis.json
 
 # For Claude review
 python3 tools/pre-commit/sonar-report-analyzer.py my-analysis.json --export-claude claude-review.json
@@ -62,7 +62,7 @@ python3 tools/pre-commit/sonar-report-analyzer.py my-analysis.json --export-clau
 
 ```bash
 # Analyze entire repository (preview mode - no upload)
-./tools/pre-commit/run-local-sonar.sh --preview --export full-analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --preview --export full-analysis.json
 ```
 
 ## 📊 Analysis Modes
@@ -70,7 +70,7 @@ python3 tools/pre-commit/sonar-report-analyzer.py my-analysis.json --export-clau
 ### Preview Mode (Recommended for Development)
 ```bash
 # Runs analysis locally, no upload to SonarCloud
-./tools/pre-commit/run-local-sonar.sh --preview
+./tools/pre-commit/upload-to-sonarcloud.sh --preview
 ```
 
 **Benefits:**
@@ -82,7 +82,7 @@ python3 tools/pre-commit/sonar-report-analyzer.py my-analysis.json --export-clau
 ### Publish Mode
 ```bash
 # Uploads results to SonarCloud
-./tools/pre-commit/run-local-sonar.sh
+./tools/pre-commit/upload-to-sonarcloud.sh
 ```
 
 **Use when:**
@@ -96,7 +96,7 @@ The key feature that solves your problem:
 
 ```bash
 # This analyzes ONLY files you've changed vs upstream/main
-./tools/pre-commit/run-local-sonar.sh --changed-only
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only
 
 # Ignores all existing no-OS baseline issues
 # Focuses on issues YOU introduced
@@ -113,7 +113,7 @@ The key feature that solves your problem:
 ### Custom File Analysis
 ```bash
 # Analyze specific files
-./tools/pre-commit/run-local-sonar.sh --preview \
+./tools/pre-commit/upload-to-sonarcloud.sh --preview \
   -Dsonar.inclusions="drivers/power/adm1275/*,projects/adm1275-eval/*"
 ```
 
@@ -121,13 +121,13 @@ The key feature that solves your problem:
 ```bash
 # Compare against different branch
 git diff --name-only origin/main...HEAD | grep -E '\.(c|h)$' | tr '\n' ',' > files.txt
-./tools/pre-commit/run-local-sonar.sh --preview -Dsonar.inclusions="$(cat files.txt)"
+./tools/pre-commit/upload-to-sonarcloud.sh --preview -Dsonar.inclusions="$(cat files.txt)"
 ```
 
 ### Export for Multiple Tools
 ```bash
 # Export for both Claude and other tools
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export sonar-raw.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export sonar-raw.json
 
 # Process for Claude
 python3 tools/pre-commit/sonar-report-analyzer.py sonar-raw.json --export-claude claude-review.json
@@ -141,7 +141,7 @@ python3 tools/pre-commit/sonar-report-analyzer.py sonar-raw.json --format json >
 ### Step 1: Run Analysis
 ```bash
 export SONAR_TOKEN="your_sonarcloud_token_here"
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export my-changes.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export my-changes.json
 ```
 
 ### Step 2: Generate Claude Report
@@ -201,8 +201,8 @@ git fetch upstream
 ### Permission Issues
 ```bash
 # Fix permissions
-chmod +x tools/pre-commit/run-local-sonar.sh
-chmod +x tools/pre-commit/quick-sonar-check.sh
+chmod +x tools/pre-commit/upload-to-sonarcloud.sh
+chmod +x tools/pre-commit/quick-sonarcloud-upload.sh
 chmod +x tools/sonar/sonar-scanner
 ```
 
@@ -211,7 +211,7 @@ chmod +x tools/sonar/sonar-scanner
 ### Faster Analysis
 ```bash
 # Analyze only C/H files in drivers you're working on
-./tools/pre-commit/run-local-sonar.sh --preview \
+./tools/pre-commit/upload-to-sonarcloud.sh --preview \
   -Dsonar.inclusions="drivers/power/**/*.c,drivers/power/**/*.h"
 ```
 
@@ -228,10 +228,10 @@ Add to your development workflow:
 
 ```bash
 # Before committing major changes
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Before creating PR
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export pr-analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export pr-analysis.json
 python3 tools/pre-commit/sonar-report-analyzer.py pr-analysis.json --export-claude claude-review.json
 # Share claude-review.json with Claude
 ```
@@ -242,7 +242,7 @@ python3 tools/pre-commit/sonar-report-analyzer.py pr-analysis.json --export-clau
 - name: Local SonarCloud Analysis
   run: |
     export SONAR_TOKEN=${{ secrets.SONAR_TOKEN }}
-    ./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export results.json
+    ./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export results.json
 ```
 
 ---
@@ -257,4 +257,4 @@ Your local SonarCloud scanner setup gives you:
 ✅ **Claude integration** (export reports for review)
 ✅ **Development workflow** (quick daily checks)
 
-**Start with:** `./tools/pre-commit/quick-sonar-check.sh`
+**Start with:** `./tools/pre-commit/quick-sonarcloud-upload.sh`

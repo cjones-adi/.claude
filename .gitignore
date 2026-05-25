@@ -1,0 +1,73 @@
+# AI Development Toolkit - .gitignore
+# Excludes build artifacts, installers, and generated files
+
+# Git submodule (if used)
+gen-ai-agents/
+
+# SonarCloud scanner installation (large binaries - should be in .claude/sonar/)
+sonar/
+sonar-scanner*/
+*.zip
+*.tar.gz
+*.deb
+
+# Build artifacts and analysis results
+static-analysis-results/
+*.html
+*.xml
+*.json
+!package.json
+!tsconfig.json
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Test outputs
+coverage/
+.coverage
+htmlcov/
+*.cover
+
+# Local configuration (sensitive)
+local-config.sh
+*.local
+
+# Output directories
+exports/
+logs/
+reports/
+
+# Ceedling test outputs
+test/
+artifacts/
+
+# Node modules (if used)
+node_modules/
+
+# Keep example configs
+!*example*
+!*template*
+!*sample*

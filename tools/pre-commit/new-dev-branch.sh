@@ -24,7 +24,10 @@ echo_warning() {
 usage() {
     echo "Create a new development branch following no-OS naming convention"
     echo ""
-    echo "Usage: $0 <device_name> [branch_type]"
+    echo "Usage: $0 [--staging] <device_name> [branch_type]"
+    echo ""
+    echo "Options:"
+    echo "  --staging     Create staging/<device> branch instead of dev/<device>"
     echo ""
     echo "Arguments:"
     echo "  device_name   Device name (e.g., adm1275, ltc2978, ad7091r5)"
@@ -35,8 +38,9 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 adm1275                    → dev/adm1275"
+    echo "  $0 --staging adm1275          → staging/adm1275"
     echo "  $0 adm1275 eval               → dev/adm1275-eval"
-    echo "  $0 adm1275 maxim              → dev/adm1275-maxim"
+    echo "  $0 --staging adm1275 maxim    → staging/adm1275-maxim"
     echo "  $0 adm1275 fix-telemetry      → dev/adm1275-fix-telemetry"
     echo "  $0 ad717x                     → dev/ad717x"
 }
@@ -62,8 +66,18 @@ main() {
         exit 0
     fi
 
-    local device_name="$1"
-    local branch_type="$2"
+    local branch_prefix="dev"
+    local device_name=""
+    local branch_type=""
+
+    # Parse --staging flag
+    if [ "$1" = "--staging" ]; then
+        branch_prefix="staging"
+        shift
+    fi
+
+    device_name="$1"
+    branch_type="$2"
 
     # Convert to lowercase
     device_name=$(echo "$device_name" | tr '[:upper:]' '[:lower:]')
@@ -74,7 +88,7 @@ main() {
     fi
 
     # Construct branch name
-    local branch_name="dev/$device_name"
+    local branch_name="$branch_prefix/$device_name"
 
     if [ -n "$branch_type" ]; then
         branch_name="$branch_name-$branch_type"

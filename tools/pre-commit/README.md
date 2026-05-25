@@ -165,10 +165,10 @@ Runs SonarCloud analysis locally on development branches without affecting main 
 export SONAR_TOKEN="your_token_here"
 
 # Quick daily check
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Full analysis with Claude export
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export analysis.json
 ```
 
 **Perfect for your workflow:** Analyze unreleased device drivers in development branches without triggering public SonarCloud scans.

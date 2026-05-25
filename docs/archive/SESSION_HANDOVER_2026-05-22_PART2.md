@@ -320,7 +320,7 @@ claude-code
 # SonarCloud setup (optional but recommended)
 ./.claude/tools/pre-commit/setup-local-sonar.sh
 export SONAR_TOKEN="your_token"
-./.claude/tools/pre-commit/quick-sonar-check.sh
+./.claude/tools/pre-commit/quick-sonarcloud-upload.sh
 ```
 
 ### Documentation Navigation
@@ -391,7 +391,7 @@ export SONAR_TOKEN="your_token"
 **Status**: ⚠️ REQUIRES USER ACTION
 
 **Location**: `tools/pre-commit/setup-local-sonar.sh`
-- Line 362: Hardcoded in heredoc creating `quick-sonar-check.sh`
+- Line 362: Hardcoded in heredoc creating `quick-sonarcloud-upload.sh`
 - Line 481: Hardcoded in help message
 
 **Token Value**: `<redacted>`

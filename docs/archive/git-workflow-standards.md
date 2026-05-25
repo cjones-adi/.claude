@@ -323,12 +323,12 @@ Every commit triggers:
 ### Manual Quality Commands
 ```bash
 # Run quality checks manually
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 python3 tools/pre-commit/review-checker.py <file.c>
 
 # Full analysis
 export SONAR_TOKEN="your_token"
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview
 ```
 
 ## 🎯 Troubleshooting

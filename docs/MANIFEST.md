@@ -9,26 +9,47 @@
 
 ## 📁 Included Components
 
-### Core Documentation (17 files)
+### Core Documentation (Organized by Category)
 ```
 docs/
-├── architecture-guide.md                    # Repository structure and platform abstraction
-├── claude-code-integration-guide.md         # Enhanced Claude workflow integration
-├── development-environment-setup.md         # Complete development environment setup
-├── developer-propagation-guide.md           # Team onboarding and workflow propagation
-├── driver-templates.md                      # Standard driver templates and patterns
-├── framework-integration-guide.md           # Framework integration and validation
+├── README.md                                # Primary documentation entry point
+├── GETTING_STARTED.md                       # Quick start guide
+├── MANIFEST.md                              # This file - complete package index
 ├── framework-validation-lessons.md          # Critical failure patterns and solutions
 ├── framework-validation-troubleshooting.md  # Quick fixes for validation failures
-├── git-workflow-guide.md                    # Complete git workflow and commit patterns
-├── git-workflow-standards.md                # Git standards and branch naming
-├── linux-driver-naming-principle.md         # Linux kernel naming compliance
-├── new-driver-workflow.md                   # Step-by-step driver development process
-├── no-os-review-pattern-analysis.md         # 6-month quality analysis and metrics
-├── quality-assurance-guide.md               # QA patterns and error prevention
-├── quick-start-reference.md                 # Daily command workflows
-├── review-pattern-automation-guide.md       # Pattern automation implementation
-└── testing-guide.md                         # Unit testing with Ceedling and validation
+│
+├── guides/                                  # Workflow and How-To Documentation (11 files)
+│   ├── architecture-guide.md                # Repository structure and platform abstraction
+│   ├── claude-code-integration-guide.md     # Enhanced Claude workflow integration
+│   ├── development-environment-setup.md     # Complete development environment setup
+│   ├── developer-propagation-guide.md       # Team onboarding and workflow propagation
+│   ├── framework-integration-guide.md       # Framework integration and validation
+│   ├── git-workflow-guide.md                # Complete git workflow and commit patterns
+│   ├── LOCAL_VS_CLOUD_ANALYSIS.md          # Static analysis workflow guide
+│   ├── new-driver-workflow.md               # Step-by-step driver development process
+│   ├── quality-assurance-guide.md           # QA patterns and error prevention
+│   ├── review-pattern-automation-guide.md   # Pattern automation implementation
+│   └── testing-guide.md                     # Unit testing with Ceedling and validation
+│
+├── reference/                               # Reference Documentation (6 files)
+│   ├── COMMIT_CHECKLIST.md                  # Pre-commit checklist reference
+│   ├── linux-driver-naming-principle.md     # Linux kernel naming compliance
+│   ├── no-os-review-pattern-analysis.md     # 6-month quality analysis and metrics
+│   ├── quick-start-reference.md             # Daily command workflows
+│   ├── SONARCLOUD_FREE_TIER_LIMITATION.md  # SonarCloud branch limitation analysis
+│   └── WORKFLOW_DIAGRAM.md                  # Complete workflow reference diagram
+│
+├── templates/                               # Code Templates (2 files)
+│   ├── current-project-templates.md         # Current project file templates (May 2026)
+│   └── driver-templates.md                  # Standard driver templates and patterns
+│
+└── archive/                                 # Historical Documentation (16 files)
+    ├── SESSION_HANDOVER_2026-05-22*.md      # Session handover documents (5 files)
+    ├── SONAR_*.md                           # SonarCloud implementation notes (2 files)
+    ├── SCRIPT_*.md                          # Script path fixes and audits (3 files)
+    ├── *_SUMMARY*.md                        # Implementation summaries (4 files)
+    ├── Claude-Code-Assisted-Dev-Workflow.md # Historical workflow documentation
+    └── git-workflow-standards.md            # Archived git standards (superseded)
 ```
 
 ### Automation Tools (25+ scripts)

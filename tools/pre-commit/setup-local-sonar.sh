@@ -27,16 +27,16 @@ echo_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-SONAR_VERSION="4.8.0.2856"
-SONAR_DIR="sonar-scanner-${SONAR_VERSION}-linux"
-SONAR_ZIP="${SONAR_DIR}.zip"
+SONAR_VERSION="8.0.1.6346"
+SONAR_DIR="sonar-scanner-${SONAR_VERSION}-linux-x64"
+SONAR_ZIP="sonar-scanner-cli-${SONAR_VERSION}-linux-x64.zip"
 SONAR_URL="https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SONAR_ZIP}"
 
 setup_directories() {
     echo_info "Setting up directories..."
 
-    mkdir -p tools/sonar
-    cd tools/sonar
+    mkdir -p .claude/tools/sonar
+    cd .claude/tools/sonar
 
     echo_success "Created tools/sonar directory"
 }
@@ -92,45 +92,21 @@ create_project_config() {
     # Go back to repo root
     cd ../..
 
-    # Create sonar-project.properties
-    cat > sonar-project.properties << EOF
-# SonarCloud configuration for no-OS
-sonar.projectKey=cjones-adi_no-OS
-sonar.organization=cjones-adi
-
-# Project metadata
-sonar.projectName=no-OS
-sonar.projectVersion=1.0
-sonar.sourceEncoding=UTF-8
-
-# Source directories and files
-sonar.sources=drivers,include,util,iio
-sonar.tests=tests
-
-# File patterns
-sonar.inclusions=**/*.c,**/*.h
-sonar.exclusions=**/libraries/**,**/build/**,**/*.mk,**/tests/**
-
-# Language settings
-sonar.c.file.suffixes=.c
-sonar.cpp.file.suffixes=.h
-
-# Analysis settings
-sonar.analysis.mode=publish
-sonar.host.url=https://sonarcloud.io
-
-# Quality settings
-sonar.qualitygate.wait=false
-EOF
-
-    echo_success "Created sonar-project.properties"
+    # Copy comprehensive configuration from template
+    if [ -f ".claude/config/sonar-project.properties" ]; then
+        cp .claude/config/sonar-project.properties sonar-project.properties
+        echo_success "Created sonar-project.properties from template"
+    else
+        echo_error "Template not found: .claude/config/sonar-project.properties"
+        exit 1
+    fi
 }
 
 create_scanner_script() {
     echo_info "Creating scanner scripts..."
 
     # Create main scanner script
-    cat > tools/pre-commit/run-local-sonar.sh << 'EOF'
+    cat > .claude/tools/pre-commit/upload-to-sonarcloud.sh << 'EOF'
 #!/bin/bash
 # Run local SonarCloud analysis on development branch
 
@@ -189,8 +165,8 @@ check_prerequisites() {
     fi
 
     # Check for scanner
-    if [ ! -f "tools/sonar/sonar-scanner" ]; then
-        echo_error "SonarCloud scanner not found. Run ./tools/pre-commit/setup-local-sonar.sh first"
+    if [ ! -f ".claude/tools/sonar/sonar-scanner" ]; then
+        echo_error "SonarCloud scanner not found. Run ./.claude/tools/pre-commit/setup-local-sonar.sh first"
         exit 1
     fi
 
@@ -204,7 +180,7 @@ check_prerequisites() {
     # Check for sonar-project.properties
     if [ ! -f "sonar-project.properties" ]; then
         echo_error "sonar-project.properties not found"
-        echo_info "Run ./tools/pre-commit/setup-local-sonar.sh to create it"
+        echo_info "Run ./.claude/tools/pre-commit/setup-local-sonar.sh to create it"
         exit 1
     fi
 
@@ -276,7 +252,7 @@ run_analysis() {
     fi
 
     # Execute scanner
-    ./tools/sonar/sonar-scanner "${scanner_args[@]}"
+    ./.claude/tools/sonar/sonar-scanner "${scanner_args[@]}"
 
     echo_success "Analysis completed"
 }
@@ -288,8 +264,8 @@ process_results() {
         echo_info "Processing results for Claude review..."
 
         # Use our analyzer if available
-        if [ -f "tools/pre-commit/sonar-report-analyzer.py" ]; then
-            python3 tools/pre-commit/sonar-report-analyzer.py "$export_file" --export-claude "claude-sonar-review.json"
+        if [ -f ".claude/tools/pre-commit/sonar-report-analyzer.py" ]; then
+            python3 .claude/tools/pre-commit/sonar-report-analyzer.py "$export_file" --export-claude "claude-sonar-review.json"
             echo_success "Claude review file generated: claude-sonar-review.json"
         fi
     fi
@@ -351,19 +327,19 @@ main() {
 main "$@"
 EOF
 
-    chmod +x tools/pre-commit/run-local-sonar.sh
-    echo_success "Created tools/pre-commit/run-local-sonar.sh"
+    chmod +x .claude/tools/pre-commit/upload-to-sonarcloud.sh
+    echo_success "Created .claude/tools/pre-commit/upload-to-sonarcloud.sh"
 
     # Create quick analysis script
-    cat > tools/pre-commit/quick-sonar-check.sh << 'EOF'
+    cat > .claude/tools/pre-commit/quick-sonarcloud-upload.sh << 'EOF'
 #!/bin/bash
-# Quick SonarCloud analysis of changed files only (preview mode)
+# Quick SonarCloud analysis of changed files only
 
 export SONAR_TOKEN="${SONAR_TOKEN:-YOUR_SONARCLOUD_TOKEN_HERE}"
 
 echo "🚀 Quick SonarCloud check on your changes..."
 
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export sonar-changes.json
+./.claude/tools/pre-commit/upload-to-sonarcloud.sh --changed-only --export sonar-changes.json
 
 if [ -f "sonar-changes.json" ]; then
     echo ""
@@ -399,20 +375,20 @@ except Exception as e:
 fi
 EOF
 
-    chmod +x tools/pre-commit/quick-sonar-check.sh
-    echo_success "Created tools/pre-commit/quick-sonar-check.sh"
+    chmod +x .claude/tools/pre-commit/quick-sonarcloud-upload.sh
+    echo_success "Created .claude/tools/pre-commit/quick-sonarcloud-upload.sh"
 }
 
 create_integration() {
     echo_info "Creating integration with existing tools..."
 
     # Update pre-commit hook to include optional sonar check
-    if [ -f "tools/pre-commit/pre-commit" ]; then
+    if [ -f ".claude/tools/pre-commit/pre-commit" ]; then
         echo_info "Adding SonarCloud integration to pre-commit hook..."
 
         # Add to pre-commit-config.example
-        if [ -f "tools/pre-commit/pre-commit-config.example" ]; then
-            cat >> tools/pre-commit/pre-commit-config.example << 'EOF'
+        if [ -f ".claude/tools/pre-commit/pre-commit-config.example" ]; then
+            cat >> .claude/tools/pre-commit/pre-commit-config.example << 'EOF'
 
 # SonarCloud integration
 ENABLE_SONAR_CHECK=false     # Local SonarCloud analysis (optional)
@@ -429,7 +405,7 @@ verify_installation() {
     echo_info "Verifying installation..."
 
     # Check scanner executable
-    if [ -x "tools/sonar/sonar-scanner" ]; then
+    if [ -x ".claude/tools/sonar/sonar-scanner" ]; then
         echo_success "Scanner executable: ✅"
     else
         echo_error "Scanner not executable"
@@ -445,7 +421,7 @@ verify_installation() {
     fi
 
     # Check scripts
-    if [ -x "tools/pre-commit/run-local-sonar.sh" ]; then
+    if [ -x ".claude/tools/pre-commit/upload-to-sonarcloud.sh" ]; then
         echo_success "Scanner script: ✅"
     else
         echo_error "Scanner script not executable"
@@ -472,18 +448,18 @@ main() {
     echo_success "🎉 Local SonarCloud Scanner setup completed!"
     echo ""
     echo_info "📋 What was installed:"
-    echo "  • SonarCloud scanner (tools/sonar/)"
+    echo "  • SonarCloud scanner (.claude/tools/sonar/)"
     echo "  • Project configuration (sonar-project.properties)"
-    echo "  • Analysis scripts (tools/pre-commit/run-local-sonar.sh)"
-    echo "  • Quick check script (tools/pre-commit/quick-sonar-check.sh)"
+    echo "  • Analysis scripts (.claude/tools/pre-commit/upload-to-sonarcloud.sh)"
+    echo "  • Quick check script (.claude/tools/pre-commit/quick-sonarcloud-upload.sh)"
     echo ""
     echo_info "🚀 Quick start:"
     echo "  1. Set token: export SONAR_TOKEN=your_sonarcloud_token_here"
-    echo "  2. Quick check: ./tools/pre-commit/quick-sonar-check.sh"
-    echo "  3. Full analysis: ./tools/pre-commit/run-local-sonar.sh --changed-only"
+    echo "  2. Quick check: ./.claude/tools/pre-commit/quick-sonarcloud-upload.sh"
+    echo "  3. Full analysis: ./.claude/tools/pre-commit/upload-to-sonarcloud.sh --changed-only"
     echo ""
-    echo_info "💡 The scanner will only analyze YOUR changes vs upstream/main"
-    echo_info "💡 Use --preview mode to avoid uploading to SonarCloud"
+    echo_info "💡 Analysis is uploaded to SonarCloud on your branch"
+    echo_info "💡 Branch analysis is isolated from main branch quality gate"
     echo ""
 }
 

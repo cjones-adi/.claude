@@ -119,7 +119,7 @@ I'm now monitoring your development for quality issues using our
 **As you code:**
 ```bash
 # Claude automatically runs during development:
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Real-time feedback:
 Claude: "I notice you're missing error handling in the SPI read function.
@@ -149,7 +149,7 @@ All checks passed! ✨ Your code meets no-OS quality standards."
 Developer: "I'm ready to create a pull request for my ADM1275 driver"
 
 Claude: "Perfect! Let me run a comprehensive SonarCloud analysis before PR submission..."
-# → Runs: ./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export analysis.json
+# → Runs: ./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export analysis.json
 
 Claude: "SonarCloud analysis complete ✅
 Found: 0 bugs, 0 vulnerabilities, 1 minor code smell

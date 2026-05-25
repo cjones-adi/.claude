@@ -115,10 +115,10 @@ validate_branch_setup() {
 
     # Test branch name validation
     if bash .claude/tools/pre-commit/check-branch-name.sh > /dev/null 2>&1; then
-        echo_success "Branch name follows convention"
+        echo_success "Branch name follows recommended convention"
     else
-        echo_warning "Branch name doesn't follow dev/<device> convention"
-        echo_info "This is OK for main/master branches"
+        echo_warning "Branch name doesn't follow recommended convention (dev/<device> or staging/<device>)"
+        echo_info "This is OK for main/master branches or custom workflows"
     fi
 
     return 0

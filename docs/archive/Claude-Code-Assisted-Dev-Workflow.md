@@ -123,7 +123,7 @@ git diff --name-only HEAD~1 | grep -E '\.(c|h)$' | xargs astyle
 cppcheck --enable=warning,style,performance .
 
 # SonarCloud (changed files only)
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Build testing
 python3 tools/scripts/build_projects.py . -project=<device>-eval

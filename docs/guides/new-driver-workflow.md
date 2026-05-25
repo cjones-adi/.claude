@@ -109,7 +109,7 @@ python3 tools/pre-commit/create-device-template.py ltc2978 power --with-project
 vim drivers/adc/ad7980/ad7980.c
 
 # Quick quality check during development
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 # → Analyzes only YOUR changes vs upstream/main
 # → Shows immediate feedback on code quality
 
@@ -156,7 +156,7 @@ git commit --amend --no-edit
 
 ```bash
 # Comprehensive analysis before creating PR
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export pr-analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export pr-analysis.json
 
 # Generate Claude review report
 python3 tools/pre-commit/sonar-report-analyzer.py pr-analysis.json --export-claude claude-review.json
@@ -366,11 +366,11 @@ python3 tools/pre-commit/create-device-template.py adm1275 pmbus \
 python3 tools/pre-commit/create-device-template.py <device> <type> --with-project
 
 # Quality checks
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 python3 tools/pre-commit/review-checker.py <files>
 
 # SonarCloud analysis
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export analysis.json
 ```
 
 ### Documentation

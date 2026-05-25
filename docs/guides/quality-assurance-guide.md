@@ -251,10 +251,10 @@ python3 tools/pre-commit/review-checker.py drivers/power/your_device/your_device
 export SONAR_TOKEN="your_sonar_token"
 
 # Quick check of your changes only (ignores baseline issues)
-./tools/pre-commit/quick-sonar-check.sh
+./tools/pre-commit/quick-sonarcloud-upload.sh
 
 # Full analysis with Claude integration
-./tools/pre-commit/run-local-sonar.sh --changed-only --preview --export analysis.json
+./tools/pre-commit/upload-to-sonarcloud.sh --changed-only --preview --export analysis.json
 ```
 
 **Perfect for development branches:** Analyzes only YOUR changes vs upstream/main, avoiding baseline issues and free tier limitations.
