@@ -79,6 +79,11 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 
 **IIO Integration (Commit 2):**
 - **IIO Framework**: `/no-os-iio` - Channel definitions, buffered acquisition, trigger handling
+- **🚨 CRITICAL REQUIREMENT**: Implement scale/offset attributes for ALL sensor channels
+  - Voltage, Current, Temperature, Power, Frequency → **MUST** have scale/offset
+  - Control/config attributes → NOT required
+  - Reference: `.claude/docs/reference/iio-scale-offset-requirement.md`
+  - Pattern: LTM4700, LTM4686, MAX31855 implementations
 - **Linux IIO**: `/linux-iio` - Kernel subsystem integration, advanced features, debugging
 
 **Platform Projects (Commit 4):**
@@ -424,6 +429,17 @@ Before creating a PR, verify:
 - [ ] Error handling for all failure paths
 - [ ] Consistent naming conventions
 
+### IIO Implementation (if applicable)
+- [ ] **Scale/offset attributes** for ALL sensor channels ⚠️ **COMMONLY MISSED**
+  - [ ] Voltage channels have scale/offset
+  - [ ] Current channels have scale/offset
+  - [ ] Temperature channels have scale/offset
+  - [ ] Power channels have scale/offset
+  - [ ] Frequency channels have scale/offset
+- [ ] Raw attributes return integers (not formatted strings)
+- [ ] Scale uses `iio_format_value()` with `IIO_VAL_FRACTIONAL` or `IIO_VAL_INT_PLUS_MICRO`
+- [ ] Reference: `.claude/docs/reference/iio-scale-offset-requirement.md`
+
 ### Build System
 - [ ] Driver builds successfully
 - [ ] Project integrates without errors
@@ -461,6 +477,7 @@ For detailed implementation guidance, see these comprehensive guides:
 ### Specialized Guides
 - **[Testing Guide](docs/guides/testing-guide.md)**: Unit testing with Ceedling and hardware validation
 - **[Architecture Guide](docs/guides/architecture-guide.md)**: Repository structure and platform abstraction
+- **[IIO Scale/Offset Requirement](.claude/docs/reference/iio-scale-offset-requirement.md)**: IIO subsystem scale/offset implementation patterns (CRITICAL)
 
 ### Quality Analysis
 - **[6-Month Review Analysis](docs/reference/no-os-review-pattern-analysis.md)**: Statistical quality analysis and improvement patterns
