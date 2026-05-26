@@ -26,9 +26,21 @@ if [ ! -f "$REPO_ROOT/.pre-commit-config" ]; then
     cp "$TOOLS_DIR/pre-commit-config.example" "$REPO_ROOT/.pre-commit-config"
 fi
 
+# Create symlink to CLAUDE.md in root for Claude Code access
+if [ ! -e "$REPO_ROOT/CLAUDE.md" ]; then
+    ln -s .claude/CLAUDE.md "$REPO_ROOT/CLAUDE.md"
+    echo "📄 Created CLAUDE.md symlink in root directory"
+fi
+
+# Make other development scripts executable
+chmod +x "$REPO_ROOT/.claude/tools/scripts/framework_validation.sh"
+chmod +x "$TOOLS_DIR/validate-setup.sh"
+chmod +x "$TOOLS_DIR/new-dev-branch.sh"
+
 echo "✅ Pre-commit hooks installed successfully!"
 echo ""
 echo "📋 What was installed:"
+echo "  • CLAUDE.md symlink in root (for Claude Code workflow)"
 echo "  • Branch naming convention validation (dev/<device_name>)"
 echo "  • Code style checks (AStyle)"
 echo "  • Static analysis (Cppcheck)"

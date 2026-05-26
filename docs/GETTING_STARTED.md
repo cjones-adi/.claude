@@ -46,13 +46,10 @@ ls -la .claude/
 # Should show: agents/, skills/, tools/, docs/, workflows/, config/, data/
 ```
 
-**Make Scripts Executable**:
+**Make Install Script Executable**:
 ```bash
-# Make all setup scripts executable
-chmod +x .claude/tools/scripts/framework_validation.sh
+# Make the install script executable (it will make other scripts executable during setup)
 chmod +x .claude/tools/pre-commit/install-hooks.sh
-chmod +x .claude/tools/pre-commit/validate-setup.sh
-chmod +x .claude/tools/pre-commit/new-dev-branch.sh
 ```
 
 ---
@@ -84,6 +81,8 @@ Execute the setup scripts to configure your environment:
 ```
 
 **What this does**:
+- Creates CLAUDE.md symlink in root directory (for Claude Code workflow access)
+- Makes development scripts executable (framework_validation.sh, validate-setup.sh, new-dev-branch.sh)
 - Installs git pre-commit hooks for code quality
 - Sets up AStyle formatting checks
 - Enables Cppcheck static analysis
@@ -93,9 +92,11 @@ Execute the setup scripts to configure your environment:
 **Expected Output**:
 ```
 🔧 Installing no-OS pre-commit hooks...
+📄 Created CLAUDE.md symlink in root directory
 ✅ Pre-commit hooks installed successfully!
 
 📋 What was installed:
+  • CLAUDE.md symlink in root (for Claude Code workflow)
   • Branch naming convention validation (dev/<device_name>)
   • Code style checks (AStyle)
   • Static analysis (Cppcheck)
