@@ -1,0 +1,11 @@
+// Claude Code QA - Additional Cppcheck suppressions
+//
+// This file contains suppressions for code quality checks that cannot be
+// fixed due to external dependencies or framework requirements.
+//
+// Format: [error id]:[filename]
+// Example: constParameterPointer:path/to/file.c
+
+// Test stub files must match external function signatures exactly
+// These cannot be made const without breaking compatibility
+constParameterPointer:tests/drivers/power/ltm4700/test/iio_stubs.c

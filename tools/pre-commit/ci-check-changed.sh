@@ -262,6 +262,11 @@ if [ -f ".cppcheckignore" ]; then
     CPPCHECK_ARGS+=("--suppressions-list=.cppcheckignore")
 fi
 
+# Add Claude-specific suppressions if file exists
+if [ -f ".claude/.cppcheckignore" ]; then
+    CPPCHECK_ARGS+=("--suppressions-list=.claude/.cppcheckignore")
+fi
+
 # Add library config if exists
 if [ -f "./ci/config.cppcheck" ]; then
     CPPCHECK_ARGS+=("--library=./ci/config.cppcheck")
@@ -661,6 +666,129 @@ else
 fi
 echo ""
 
+# Check 7: Unit Tests with Coverage (Ceedling)
+# Detect if any driver files changed
+CHANGED_DRIVER_FILES=$(git diff --name-only --diff-filter=d "$COMPARE_POINT"..HEAD | grep "^drivers/" | grep -E '\.(c|h)$' || true)
+
+if [ -n "$CHANGED_DRIVER_FILES" ]; then
+    echo_info "7️⃣  Running unit tests with coverage (Ceedling)..."
+
+    # Extract unique driver paths from changed files
+    # drivers/<category>/<device>/*.c -> <category>/<device>
+    CHANGED_DRIVERS=$(echo "$CHANGED_DRIVER_FILES" | sed -n 's|^drivers/\([^/]*/[^/]*\)/.*|\1|p' | sort -u)
+    DRIVER_COUNT=$(echo "$CHANGED_DRIVERS" | wc -l)
+
+    if [ -z "$CHANGED_DRIVERS" ]; then
+        echo_info "No driver implementation files changed - skipping unit tests"
+    else
+        echo_info "Detected $DRIVER_COUNT changed driver(s):"
+        echo "$CHANGED_DRIVERS" | sed 's|^|     • drivers/|'
+        echo ""
+
+        # Test each changed driver
+        TEST_ERRORS=0
+        TESTS_RUN=0
+        for driver_path in $CHANGED_DRIVERS; do
+            CATEGORY=$(echo "$driver_path" | cut -d'/' -f1)
+            DEVICE=$(echo "$driver_path" | cut -d'/' -f2)
+            TEST_DIR="tests/drivers/$CATEGORY/$DEVICE"
+
+            # Check if unit tests exist for this driver
+            if [ ! -f "$TEST_DIR/project.yml" ]; then
+                echo_info "No unit tests found for drivers/$CATEGORY/$DEVICE - skipping"
+                echo ""
+                continue
+            fi
+
+            echo_info "Running unit tests for drivers/$CATEGORY/$DEVICE"
+            TESTS_RUN=$((TESTS_RUN + 1))
+
+            # Run Ceedling with coverage
+            CEEDLING_OUTPUT=$(mktemp)
+            cd "$TEST_DIR"
+
+            if ceedling clean clobber gcov:all > "$CEEDLING_OUTPUT" 2>&1; then
+                # Parse test results
+                TESTS_PASSED=$(grep -oP 'TESTED:\s+\K\d+' "$CEEDLING_OUTPUT" || echo "0")
+                TESTS_FAILED=$(grep -oP 'FAILED:\s+\K\d+' "$CEEDLING_OUTPUT" || echo "0")
+                TESTS_IGNORED=$(grep -oP 'IGNORED:\s+\K\d+' "$CEEDLING_OUTPUT" || echo "0")
+
+                # Parse coverage from "Lines executed:XX.XX% of NNN" format
+                # Extract all line coverage percentages and calculate average
+                COVERAGE_VALUES=$(grep -oP 'Lines executed:\K[\d.]+(?=% of)' "$CEEDLING_OUTPUT" || echo "")
+
+                if [ -n "$COVERAGE_VALUES" ]; then
+                    # Calculate average coverage
+                    COVERAGE=$(echo "$COVERAGE_VALUES" | awk '{sum+=$1; count+=1} END {if (count>0) printf "%.1f", sum/count; else print "0.0"}')
+                else
+                    COVERAGE="N/A"
+                fi
+
+                if [ "$TESTS_FAILED" -eq 0 ]; then
+                    echo_success "Unit tests passed: $TESTS_PASSED tests, $TESTS_IGNORED ignored"
+
+                    # Display coverage (handle both numeric and N/A)
+                    if [ "$COVERAGE" = "N/A" ]; then
+                        echo_info "Coverage: $COVERAGE (unable to parse coverage results)"
+                    else
+                        echo_info "Coverage: $COVERAGE%"
+
+                        # Warn if coverage is below 80%
+                        if awk "BEGIN {exit !($COVERAGE < 80.0)}"; then
+                            echo_warning "Coverage below 80% target"
+                        fi
+                    fi
+                else
+                    echo_error "Unit tests failed: $TESTS_FAILED/$TESTS_PASSED tests failed"
+                    echo ""
+                    echo "Test failures:"
+                    grep -A 5 "FAILED TEST SUMMARY" "$CEEDLING_OUTPUT" || tail -30 "$CEEDLING_OUTPUT"
+                    echo ""
+                    TEST_ERRORS=$((TEST_ERRORS + 1))
+                fi
+            else
+                echo_error "Ceedling execution failed"
+                echo ""
+                echo "Ceedling errors:"
+                tail -50 "$CEEDLING_OUTPUT" | grep -E "error:|Error:|FAILED:" || tail -20 "$CEEDLING_OUTPUT"
+                echo ""
+                TEST_ERRORS=$((TEST_ERRORS + 1))
+            fi
+
+            rm -f "$CEEDLING_OUTPUT"
+            cd - > /dev/null
+            echo ""
+        done
+
+        if [ $TESTS_RUN -eq 0 ]; then
+            echo_info "No unit tests available for changed drivers - skipping"
+        elif [ $TEST_ERRORS -eq 0 ]; then
+            echo_success "All unit tests passed"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+        else
+            echo_error "$TEST_ERRORS unit test suite(s) failed"
+            echo ""
+            echo_warning "📋 How to Fix Unit Test Issues:"
+            echo ""
+            echo "  Common issues:"
+            echo "  • Test failures: Fix the driver implementation or test logic"
+            echo "  • Coverage below 80%: Add tests for uncovered code paths"
+            echo "  • Ceedling errors: Check project.yml configuration"
+            echo "  • Mock failures: Verify CMock expectations match calls"
+            echo ""
+            echo "  To test manually:"
+            echo "  cd tests/drivers/$CATEGORY/$DEVICE"
+            echo "  ceedling clean clobber gcov:all"
+            echo "  ceedling gcov:all utils:gcov  # Generate coverage report"
+            echo ""
+            CHECKS_FAILED=$((CHECKS_FAILED + 1))
+        fi
+    fi
+else
+    echo_info "7️⃣  No driver files changed - skipping unit tests"
+fi
+echo ""
+
 # Summary
 echo "═══════════════════════════════════════════"
 if [ $CHECKS_FAILED -eq 0 ]; then
@@ -705,6 +833,7 @@ else
     echo "  • Doxygen: missing/incomplete documentation"
     echo "  • Sphinx: RST formatting issues (title underlines, etc.)"
     echo "  • Build: compilation errors and missing dependencies"
+    echo "  • Unit Tests: test failures and coverage below 80%"
     echo ""
 
     # Re-run instructions
