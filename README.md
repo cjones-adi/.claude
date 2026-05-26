@@ -82,13 +82,15 @@ cd .claude
 git submodule update --init --recursive
 cd ..
 
-# 4. Make scripts executable
-chmod +x .claude/tools/scripts/framework_validation.sh
+# 4. Make install script executable
 chmod +x .claude/tools/pre-commit/install-hooks.sh
-chmod +x .claude/tools/pre-commit/validate-setup.sh
-chmod +x .claude/tools/pre-commit/new-dev-branch.sh
 
 # 5. Install pre-commit hooks and quality automation
+# This will automatically:
+#  - Create CLAUDE.md symlink in root directory
+#  - Make other development scripts executable
+#  - Install git pre-commit hooks
+#  - Set up quality automation tools
 ./.claude/tools/pre-commit/install-hooks.sh
 
 # 6. Verify the complete setup
@@ -100,6 +102,25 @@ That's it! The entire development workflow is now ready to use.
 **Note**: Agents and skills are accessed via symlinks:
 - `.claude/agents/` → `gen-ai-agents/agents/`
 - `.claude/skills/` → `gen-ai-agents/skills/`
+
+### Uninstallation
+
+To cleanly remove the development workflow and restore the repository to its original state:
+
+```bash
+# Remove git hooks and cleanup root directory files
+./.claude/tools/pre-commit/uninstall-hooks.sh
+
+# Optionally, remove the entire .claude directory
+rm -rf .claude/
+```
+
+**What the uninstall script removes**:
+- ✅ Git pre-commit and commit-msg hooks
+- ✅ CLAUDE.md symlink from root directory
+- ✅ .pre-commit-config file (with confirmation prompt)
+
+**Note**: The `.claude/` directory itself is NOT automatically removed, allowing you to reinstall easily. Remove it manually if you want complete cleanup.
 
 ## Core Components
 

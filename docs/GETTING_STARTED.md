@@ -565,4 +565,50 @@ claude-code
 
 ---
 
+## 🧹 Uninstalling the Workflow
+
+If you need to remove the AI-assisted workflow and restore your repository to its original state:
+
+### Step 1: Run the Uninstall Script
+
+```bash
+# From repository root
+./.claude/tools/pre-commit/uninstall-hooks.sh
+```
+
+**What this removes**:
+- ✅ Git pre-commit hook
+- ✅ Git commit-msg hook
+- ✅ CLAUDE.md symlink from root directory
+- ✅ .pre-commit-config file (with confirmation prompt)
+
+### Step 2: Optionally Remove .claude Directory
+
+```bash
+# Complete removal (optional)
+rm -rf .claude/
+```
+
+**Note**: The uninstall script does NOT automatically remove the `.claude/` directory. This allows you to:
+- Reinstall easily by running `install-hooks.sh` again
+- Keep the documentation and tools for reference
+- Preserve any customizations you've made
+
+### Reinstallation
+
+To reinstall after uninstalling:
+
+```bash
+# Simply run the install script again
+./.claude/tools/pre-commit/install-hooks.sh
+```
+
+All setup will be restored, including:
+- CLAUDE.md symlink
+- Git hooks
+- Script permissions
+- Configuration files
+
+---
+
 **Happy Driver Development! 🎉**
