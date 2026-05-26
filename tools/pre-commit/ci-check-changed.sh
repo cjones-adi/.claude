@@ -112,23 +112,46 @@ fi
 
 echo ""
 
-# Get changed files
-get_changed_files() {
-    git diff --name-only --diff-filter=d "$COMPARE_POINT"..HEAD | grep -E '\.(c|h)$' || true
-}
+# Get changed files by type
+CHANGED_C_H_FILES=$(git diff --name-only --diff-filter=d "$COMPARE_POINT"..HEAD | grep -E '\.(c|h)$' || true)
+CHANGED_RST_FILES=$(git diff --name-only --diff-filter=d "$COMPARE_POINT"..HEAD | grep -E '\.rst$' || true)
 
-CHANGED_FILES=$(get_changed_files)
+# For backward compatibility, keep CHANGED_FILES for C/H files
+CHANGED_FILES="$CHANGED_C_H_FILES"
 
-if [ -z "$CHANGED_FILES" ]; then
-    echo_warning "No C/C++ files changed"
+if [ -z "$CHANGED_C_H_FILES" ] && [ -z "$CHANGED_RST_FILES" ]; then
+    echo_warning "No source or documentation files changed"
     echo_success "Nothing to check - all clear!"
     exit 0
 fi
 
 # Count files
-FILE_COUNT=$(echo "$CHANGED_FILES" | wc -l)
-echo_info "Found $FILE_COUNT changed C/C++ file(s):"
-echo "$CHANGED_FILES" | sed 's/^/  • /'
+C_H_COUNT=0
+RST_COUNT=0
+TOTAL_FILE_COUNT=0
+
+if [ -n "$CHANGED_C_H_FILES" ]; then
+    C_H_COUNT=$(echo "$CHANGED_C_H_FILES" | wc -l)
+    TOTAL_FILE_COUNT=$((TOTAL_FILE_COUNT + C_H_COUNT))
+fi
+
+if [ -n "$CHANGED_RST_FILES" ]; then
+    RST_COUNT=$(echo "$CHANGED_RST_FILES" | wc -l)
+    TOTAL_FILE_COUNT=$((TOTAL_FILE_COUNT + RST_COUNT))
+fi
+
+# Keep FILE_COUNT for existing checks
+FILE_COUNT=$C_H_COUNT
+
+echo_info "Files to be checked:"
+if [ -n "$CHANGED_C_H_FILES" ]; then
+    echo -e "${BLUE}  📝 $C_H_COUNT C/H source file(s):${NC}"
+    echo "$CHANGED_C_H_FILES" | sed 's/^/     • /'
+fi
+if [ -n "$CHANGED_RST_FILES" ]; then
+    echo -e "${BLUE}  📚 $RST_COUNT documentation file(s):${NC}"
+    echo "$CHANGED_RST_FILES" | sed 's/^/     • /'
+fi
 echo ""
 
 CHECKS_PASSED=0
@@ -318,13 +341,291 @@ fi
 rm -f "$CPPCHECK_OUTPUT"
 echo ""
 
+# Check 3: Documentation Completeness (Doxygen - Changed Files Only)
+echo_info "3️⃣  Checking documentation completeness (Doxygen)..."
+
+# Only check source files (already filtered in CHANGED_FILES)
+if [ -z "$CHANGED_FILES" ]; then
+    echo_success "No source files changed - skipping"
+    CHECKS_PASSED=$((CHECKS_PASSED + 1))
+else
+    # Check if doxygen is available
+    if ! command -v doxygen > /dev/null 2>&1; then
+        echo_warning "Doxygen not installed - skipping documentation check"
+        echo_info "Install with: sudo apt-get install -y doxygen"
+        echo ""
+    else
+        # Create temporary Doxyfile for changed files only
+        TEMP_DOXYFILE=$(mktemp)
+        TEMP_DOXY_OUT=$(mktemp -d)
+
+        cat > "$TEMP_DOXYFILE" << 'DOXYEOF'
+# Minimal Doxyfile for fast validation of changed files
+PROJECT_NAME           = "Changed Files Validation"
+OUTPUT_DIRECTORY       = TEMP_DOXY_OUT_PLACEHOLDER
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_FORMAT            = "$file:$line: $text"
+QUIET                  = YES
+RECURSIVE              = NO
+DOXYEOF
+
+        # Replace placeholder with actual temp directory
+        sed -i "s|TEMP_DOXY_OUT_PLACEHOLDER|$TEMP_DOXY_OUT|g" "$TEMP_DOXYFILE"
+
+        # Add INPUT files (changed files only)
+        echo "INPUT = \\" >> "$TEMP_DOXYFILE"
+        echo "$CHANGED_FILES" | while IFS= read -r file; do
+            echo "    $(pwd)/$file \\" >> "$TEMP_DOXYFILE"
+        done
+        echo "" >> "$TEMP_DOXYFILE"
+
+        echo_info "Analyzing $FILE_COUNT file(s) for documentation completeness..."
+
+        # Run Doxygen on changed files only
+        DOXY_OUTPUT=$(mktemp)
+        doxygen "$TEMP_DOXYFILE" 2>&1 | tee "$DOXY_OUTPUT" > /dev/null
+        DOXY_WARNINGS=$(grep -E "warning:|error:" "$DOXY_OUTPUT" || true)
+
+        # Clean up temporary files
+        rm -rf "$TEMP_DOXY_OUT" "$TEMP_DOXYFILE" "$DOXY_OUTPUT"
+
+        if [ -z "$DOXY_WARNINGS" ]; then
+            echo_success "Documentation completeness check passed"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+        else
+            echo_error "Documentation issues found:"
+            echo ""
+            echo "$DOXY_WARNINGS"
+            echo ""
+            echo_warning "📋 How to Fix Documentation Issues:"
+            echo ""
+            echo "  Common issues:"
+            echo "  • Missing @param for function parameters"
+            echo "  • Missing @return for non-void functions"
+            echo "  • Missing @brief for function description"
+            echo "  • Undocumented public functions"
+            echo "  • Parameter name mismatch between code and docs"
+            echo ""
+            echo "  Example fix:"
+            echo "  /**"
+            echo "   * @brief Initialize the device"
+            echo "   * @param dev - Device descriptor"
+            echo "   * @param init_param - Initialization parameters"
+            echo "   * @return 0 in case of success, error code otherwise"
+            echo "   */"
+            echo ""
+            CHECKS_FAILED=$((CHECKS_FAILED + 1))
+        fi
+    fi
+fi
+echo ""
+
+# Check 4: Sphinx RST Documentation (RST formatting)
+if [ -n "$CHANGED_RST_FILES" ]; then
+    echo_info "4️⃣  Checking RST documentation formatting (Sphinx)..."
+
+    if ! command -v sphinx-build > /dev/null 2>&1; then
+        echo_warning "Sphinx not installed - skipping RST validation"
+        echo_info "Install with: pip3 install sphinx sphinx-rtd-theme breathe"
+        echo ""
+    else
+        # Check if we're in the right directory structure
+        if [ ! -d "doc/sphinx/source" ]; then
+            echo_warning "Sphinx source directory not found - skipping"
+            echo ""
+        else
+            echo_info "Analyzing $RST_COUNT RST file(s) for formatting issues..."
+
+            # Run Sphinx build with -W (warnings as errors)
+            # Note: Not using -Q (quiet) so we can see actual error details
+            SPHINX_OUTPUT=$(mktemp)
+
+            # Save current directory and change to sphinx source
+            ORIGINAL_DIR=$(pwd)
+            cd doc/sphinx/source
+
+            # Run Sphinx with strict warnings (warnings become errors)
+            # Filter to show only warnings/errors (not all build output)
+            if make SPHINXOPTS="-W" html > "$SPHINX_OUTPUT" 2>&1; then
+                SPHINX_RESULT=0
+            else
+                SPHINX_RESULT=1
+            fi
+
+            # Return to original directory
+            cd "$ORIGINAL_DIR"
+
+            # Check if the failure was due to missing dependencies
+            if grep -q "Could not import extension\|No module named" "$SPHINX_OUTPUT" 2>/dev/null; then
+                echo_warning "Sphinx dependencies missing - skipping full validation"
+                echo_info "Missing Python packages detected. Install with:"
+                echo_info "  pip3 install -r doc/sphinx/source/requirements.txt"
+                echo ""
+                rm -f "$SPHINX_OUTPUT"
+            elif [ $SPHINX_RESULT -eq 0 ]; then
+                echo_success "RST formatting validation passed"
+                CHECKS_PASSED=$((CHECKS_PASSED + 1))
+                rm -f "$SPHINX_OUTPUT"
+            else
+                echo_error "RST formatting issues found:"
+                echo ""
+                # Show only warnings and errors (filter out build noise)
+                grep -E "WARNING:|ERROR:|warning:|error:" "$SPHINX_OUTPUT" || cat "$SPHINX_OUTPUT"
+                echo ""
+                echo_warning "📋 How to Fix RST Formatting Issues:"
+                echo ""
+                echo "  Common issues:"
+                echo "  • Title underline length must match title exactly"
+                echo "  • Use consistent underline characters (=, -, ~, ^)"
+                echo "  • Check for proper indentation in code blocks"
+                echo "  • Verify toctree entries exist"
+                echo "  • Ensure blank lines around directives"
+                echo ""
+                echo "  Example fix for title underline:"
+                echo "  LTM4700 Driver"
+                echo "  =============="
+                echo "  (14 characters in title = 14 equal signs)"
+                echo ""
+                rm -f "$SPHINX_OUTPUT"
+                CHECKS_FAILED=$((CHECKS_FAILED + 1))
+            fi
+        fi
+    fi
+else
+    echo_info "4️⃣  No RST files changed - skipping Sphinx check"
+fi
+echo ""
+
+# Check 5: Quick Project Build Test
+# Detect if any project files changed
+CHANGED_PROJECT_FILES=$(git diff --name-only --diff-filter=d "$COMPARE_POINT"..HEAD | grep "^projects/" || true)
+
+if [ -n "$CHANGED_PROJECT_FILES" ]; then
+    echo_info "5️⃣  Running quick project build test..."
+
+    # Extract unique project names from changed files
+    CHANGED_PROJECTS=$(echo "$CHANGED_PROJECT_FILES" | cut -d'/' -f2 | sort -u)
+    PROJECT_COUNT=$(echo "$CHANGED_PROJECTS" | wc -l)
+
+    echo_info "Detected $PROJECT_COUNT changed project(s):"
+    echo "$CHANGED_PROJECTS" | sed 's/^/     • projects\//'
+    echo ""
+
+    # Test build for each changed project
+    BUILD_ERRORS=0
+    for project in $CHANGED_PROJECTS; do
+        PROJECT_DIR="projects/$project"
+
+        if [ ! -f "$PROJECT_DIR/builds.json" ]; then
+            echo_warning "No builds.json found for $project - skipping build test"
+            continue
+        fi
+
+        # Extract ALL build configurations from builds.json
+        BUILD_CONFIGS=$(python3 -c "
+import json
+import sys
+try:
+    with open('$PROJECT_DIR/builds.json', 'r') as f:
+        builds = json.load(f)
+    for platform, configs in builds.items():
+        for build_name, build_config in configs.items():
+            print(f'{platform}|{build_name}|{build_config[\"flags\"]}')
+except Exception as e:
+    print(f'ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1)
+
+        if [ $? -ne 0 ]; then
+            echo_error "Failed to parse builds.json for $project"
+            BUILD_ERRORS=$((BUILD_ERRORS + 1))
+            continue
+        fi
+
+        # Count build configurations
+        BUILD_CONFIG_COUNT=$(echo "$BUILD_CONFIGS" | wc -l)
+        echo_info "Found $BUILD_CONFIG_COUNT build configuration(s) for $project"
+        echo ""
+
+        # Test each build configuration
+        CONFIG_NUM=0
+        while IFS= read -r build_info; do
+            CONFIG_NUM=$((CONFIG_NUM + 1))
+
+            # Parse build info
+            PLATFORM=$(echo "$build_info" | cut -d'|' -f1)
+            BUILD_NAME=$(echo "$build_info" | cut -d'|' -f2)
+            BUILD_FLAGS=$(echo "$build_info" | cut -d'|' -f3)
+
+            echo_info "[$CONFIG_NUM/$BUILD_CONFIG_COUNT] Testing: $BUILD_NAME ($PLATFORM)"
+            echo_info "Build flags: $BUILD_FLAGS"
+
+            # Run the build
+            BUILD_OUTPUT=$(mktemp)
+            cd "$PROJECT_DIR"
+
+            if make $BUILD_FLAGS > "$BUILD_OUTPUT" 2>&1; then
+                echo_success "Build passed: $BUILD_NAME"
+            else
+                echo_error "Build failed: $BUILD_NAME"
+                echo ""
+                echo "Build errors:"
+                tail -50 "$BUILD_OUTPUT" | grep -E "error:|Error:|fatal:|undefined reference" || tail -20 "$BUILD_OUTPUT"
+                echo ""
+                BUILD_ERRORS=$((BUILD_ERRORS + 1))
+            fi
+
+            # Clean up build artifacts
+            make clean > /dev/null 2>&1 || true
+            rm -f "$BUILD_OUTPUT"
+            cd - > /dev/null
+            echo ""
+        done <<< "$BUILD_CONFIGS"
+    done
+
+    if [ $BUILD_ERRORS -eq 0 ]; then
+        echo_success "All project builds passed"
+        CHECKS_PASSED=$((CHECKS_PASSED + 1))
+    else
+        echo_error "$BUILD_ERRORS project build(s) failed"
+        echo ""
+        echo_warning "📋 How to Fix Build Issues:"
+        echo ""
+        echo "  Common issues:"
+        echo "  • Missing #include directives"
+        echo "  • Undefined references - check src.mk dependencies"
+        echo "  • Syntax errors in C code"
+        echo "  • Missing platform-specific headers"
+        echo ""
+        echo "  To test manually:"
+        echo "  cd projects/$project"
+        echo "  make $BUILD_FLAGS"
+        echo ""
+        CHECKS_FAILED=$((CHECKS_FAILED + 1))
+    fi
+else
+    echo_info "5️⃣  No project files changed - skipping build test"
+fi
+echo ""
+
 # Summary
 echo "═══════════════════════════════════════════"
 if [ $CHECKS_FAILED -eq 0 ]; then
-    echo_success "🎉 All checks passed! ($FILE_COUNT file(s) analyzed)"
+    echo_success "🎉 All checks passed! ($TOTAL_FILE_COUNT file(s) analyzed)"
     echo ""
     echo_info "Changed files are clean:"
-    echo "$CHANGED_FILES" | sed 's/^/  ✅ /'
+    if [ -n "$CHANGED_C_H_FILES" ]; then
+        echo "$CHANGED_C_H_FILES" | sed 's/^/  ✅ /'
+    fi
+    if [ -n "$CHANGED_RST_FILES" ]; then
+        echo "$CHANGED_RST_FILES" | sed 's/^/  ✅ /'
+    fi
     echo ""
     exit 0
 else
@@ -344,18 +645,20 @@ else
         echo ""
     fi
 
-    # Priority 2: Fix static analysis
-    if [ $CHECKS_FAILED -gt 0 ] && [ $ASTYLE_ISSUES -eq 0 ]; then
-        echo "  Priority 1: Fix Static Analysis Issues"
-        echo "  ───────────────────────────────────────"
-        echo "  Review cppcheck warnings above and fix code issues"
-        echo ""
-    elif [ $CHECKS_FAILED -gt 1 ]; then
-        echo "  Priority 2: Fix Static Analysis Issues"
-        echo "  ───────────────────────────────────────"
-        echo "  Review cppcheck warnings above and fix code issues"
-        echo ""
+    # Priority 2: Fix static analysis and documentation
+    PRIORITY=2
+    if [ $ASTYLE_ISSUES -eq 0 ]; then
+        PRIORITY=1
     fi
+
+    echo "  Priority $PRIORITY: Fix Code Quality Issues"
+    echo "  ────────────────────────────────────────"
+    echo "  Review warnings above and fix:"
+    echo "  • Cppcheck: static analysis issues"
+    echo "  • Doxygen: missing/incomplete documentation"
+    echo "  • Sphinx: RST formatting issues (title underlines, etc.)"
+    echo "  • Build: compilation errors and missing dependencies"
+    echo ""
 
     # Re-run instructions
     echo "  After Fixing:"
@@ -366,6 +669,8 @@ else
     echo "  • Formatting guide: ./ci/astyle_config"
     echo "  • Suppression list: .cppcheckignore"
     echo "  • Cppcheck docs: https://cppcheck.sourceforge.io/"
+    echo "  • Doxygen docs: https://www.doxygen.nl/manual/docblocks.html"
+    echo "  • Sphinx/RST guide: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html"
     echo ""
     exit 1
 fi
