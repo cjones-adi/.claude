@@ -15,10 +15,8 @@ docs/
 ├── README.md                                # Primary documentation entry point
 ├── GETTING_STARTED.md                       # Quick start guide
 ├── MANIFEST.md                              # This file - complete package index
-├── framework-validation-lessons.md          # Critical failure patterns and solutions
-├── framework-validation-troubleshooting.md  # Quick fixes for validation failures
 │
-├── guides/                                  # Workflow and How-To Documentation (13 files)
+├── guides/                                  # Workflow and How-To Documentation (13 files + sonar/)
 │   ├── architecture-guide.md                # Repository structure and platform abstraction
 │   ├── ci-check-changed-files.md            # Fast CI checking on changed files only
 │   ├── ci-check-recommendations.md          # CI issue recommendations and solutions
@@ -32,15 +30,23 @@ docs/
 │   ├── new-driver-workflow.md               # Step-by-step driver development process
 │   ├── quality-assurance-guide.md           # QA patterns and error prevention
 │   ├── review-pattern-automation-guide.md   # Pattern automation implementation
-│   └── testing-guide.md                     # Unit testing with Ceedling and validation
+│   ├── testing-guide.md                     # Unit testing with Ceedling and validation
+│   └── sonar/                               # SonarQube Integration Guides (2 files)
+│       ├── sonarqube-enterprise-integration.md  # Enterprise SonarQube setup
+│       └── sonarqube-integration-README.md      # SonarQube setup and usage
 │
-├── reference/                               # Reference Documentation (6 files)
+├── reference/                               # Reference Documentation (8 files + sonar/)
 │   ├── COMMIT_CHECKLIST.md                  # Pre-commit checklist reference
+│   ├── framework-validation-lessons.md      # Critical failure patterns and solutions
+│   ├── framework-validation-troubleshooting.md  # Quick fixes for validation failures
 │   ├── linux-driver-naming-principle.md     # Linux kernel naming compliance
 │   ├── no-os-review-pattern-analysis.md     # 6-month quality analysis and metrics
 │   ├── quick-start-reference.md             # Daily command workflows
 │   ├── SONARCLOUD_FREE_TIER_LIMITATION.md  # SonarCloud branch limitation analysis
-│   └── WORKFLOW_DIAGRAM.md                  # Complete workflow reference diagram
+│   ├── WORKFLOW_DIAGRAM.md                  # Complete workflow reference diagram
+│   └── sonar/                               # SonarQube Reference (2 files)
+│       ├── ENTERPRISE_SONAR_TEST_RESULTS.md     # Enterprise testing results
+│       └── sonar-comparison-summary.md          # SonarCloud vs SonarQube comparison
 │
 ├── templates/                               # Code Templates (2 files)
 │   ├── current-project-templates.md         # Current project file templates (May 2026)

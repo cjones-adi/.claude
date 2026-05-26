@@ -223,7 +223,7 @@
 - Implementation is **blocked** until fixed
 
 **What To Do**:
-1. Read `.claude/docs/framework-validation-troubleshooting.md`
+1. Read `.claude/docs/reference/framework-validation-troubleshooting.md`
 2. Fix identified issues
 3. Re-run validation or request driver again
 
@@ -356,10 +356,10 @@ git config --global user.email
 ### For New Developers
 
 **Read in this order**:
-1. [GETTING_STARTED.md](GETTING_STARTED.md) - Complete onboarding (this document)
+1. [GETTING_STARTED.md](../GETTING_STARTED.md) - Complete onboarding (this document)
 2. [framework-validation-lessons.md](framework-validation-lessons.md) - Critical failure patterns
-3. [new-driver-workflow.md](new-driver-workflow.md) - Detailed workflow guide
-4. [current-project-templates.md](current-project-templates.md) - Template standards
+3. [new-driver-workflow.md](../guides/new-driver-workflow.md) - Detailed workflow guide
+4. [current-project-templates.md](../templates/current-project-templates.md) - Template standards
 
 ### For Advanced Users
 

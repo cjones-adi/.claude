@@ -391,10 +391,10 @@ gh pr create --repo analogdevicesinc/no-OS
 **Solution**:
 ```bash
 # Read detailed troubleshooting guide
-cat .claude/docs/framework-validation-troubleshooting.md
+cat .claude/docs/reference/framework-validation-troubleshooting.md
 
 # Check platform-specific issues
-cat .claude/docs/framework-validation-lessons.md
+cat .claude/docs/reference/framework-validation-lessons.md
 ```
 
 ### Issue: Pre-commit Hooks Block Commit
@@ -438,8 +438,8 @@ ceedling gcov:all utils:gcov
 ### Documentation
 
 **Critical Guides** (read these first):
-- `.claude/docs/framework-validation-lessons.md` - Failure patterns and solutions
-- `.claude/docs/new-driver-workflow.md` - Complete development process
+- `.claude/docs/reference/framework-validation-lessons.md` - Failure patterns and solutions
+- `.claude/docs/guides/new-driver-workflow.md` - Complete development process
 - `.claude/docs/templates/current-project-templates.md` - Project file templates
 
 **Workflow Guides**:
@@ -535,7 +535,7 @@ gh pr create --repo analogdevicesinc/no-OS
 4. ✅ Run unit tests and understand coverage
 
 ### Week 2: Understanding the Framework
-1. Read `.claude/docs/framework-validation-lessons.md`
+1. Read `.claude/docs/reference/framework-validation-lessons.md`
 2. Study `.claude/docs/templates/driver-templates.md`
 3. Review `.claude/docs/guides/architecture-guide.md`
 4. Experiment with manual driver modifications

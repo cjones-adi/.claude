@@ -13,12 +13,12 @@
    - Starting your first AI-assisted driver development
    - Troubleshooting common issues
 
-2. **[WORKFLOW_DIAGRAM.md](WORKFLOW_DIAGRAM.md)** ⭐ - Visual workflow guide
+2. **[WORKFLOW_DIAGRAM.md](reference/WORKFLOW_DIAGRAM.md)** ⭐ - Visual workflow guide
    - Complete adoption flow diagrams
    - AI workflow phases
    - Quick commands reference
 
-3. **[new-driver-workflow.md](new-driver-workflow.md)** ⭐ - Core driver development workflow
+3. **[new-driver-workflow.md](guides/new-driver-workflow.md)** ⭐ - Core driver development workflow
    - Complete development process
    - 6-commit pattern explained
    - Quality assurance integration
@@ -28,9 +28,9 @@
 ## 📁 Essential Documents (Main Directory)
 
 ### Quick Reference
-- **[COMMIT_CHECKLIST.md](COMMIT_CHECKLIST.md)** - Pre-submission checklist
-- **[framework-validation-troubleshooting.md](framework-validation-troubleshooting.md)** - Quick fixes for validation failures
-- **[framework-validation-lessons.md](framework-validation-lessons.md)** - Critical failure patterns and solutions
+- **[COMMIT_CHECKLIST.md](reference/COMMIT_CHECKLIST.md)** - Pre-submission checklist
+- **[framework-validation-troubleshooting.md](reference/framework-validation-troubleshooting.md)** - Quick fixes for validation failures
+- **[framework-validation-lessons.md](reference/framework-validation-lessons.md)** - Critical failure patterns and solutions
 
 ### Package Information
 - **[MANIFEST.md](MANIFEST.md)** - Complete package file inventory
@@ -99,12 +99,12 @@ Historical documents and session notes (for reference only):
   → [GETTING_STARTED.md](GETTING_STARTED.md)
 
 - **Understand the complete workflow**
-  → [WORKFLOW_DIAGRAM.md](WORKFLOW_DIAGRAM.md)
-  → [new-driver-workflow.md](new-driver-workflow.md)
+  → [WORKFLOW_DIAGRAM.md](reference/WORKFLOW_DIAGRAM.md)
+  → [new-driver-workflow.md](guides/new-driver-workflow.md)
 
 - **Fix framework validation failures**
-  → [framework-validation-troubleshooting.md](framework-validation-troubleshooting.md)
-  → [framework-validation-lessons.md](framework-validation-lessons.md)
+  → [framework-validation-troubleshooting.md](reference/framework-validation-troubleshooting.md)
+  → [framework-validation-lessons.md](reference/framework-validation-lessons.md)
 
 - **Set up my development environment**
   → [guides/development-environment-setup.md](guides/development-environment-setup.md)
@@ -135,11 +135,11 @@ Historical documents and session notes (for reference only):
 
 **Complete Beginner**:
 1. [GETTING_STARTED.md](GETTING_STARTED.md)
-2. [WORKFLOW_DIAGRAM.md](WORKFLOW_DIAGRAM.md)
+2. [WORKFLOW_DIAGRAM.md](reference/WORKFLOW_DIAGRAM.md)
 3. [guides/development-environment-setup.md](guides/development-environment-setup.md)
 
 **Intermediate Developer**:
-1. [new-driver-workflow.md](new-driver-workflow.md)
+1. [new-driver-workflow.md](guides/new-driver-workflow.md)
 2. [templates/driver-templates.md](templates/driver-templates.md)
 3. [guides/testing-guide.md](guides/testing-guide.md)
 
@@ -186,15 +186,15 @@ Historical documents and session notes (for reference only):
 ## 🆘 Getting Help
 
 **Common Issues**:
-1. Framework validation fails → [framework-validation-troubleshooting.md](framework-validation-troubleshooting.md)
+1. Framework validation fails → [framework-validation-troubleshooting.md](reference/framework-validation-troubleshooting.md)
 2. Pre-commit hooks block commit → [guides/quality-assurance-guide.md](guides/quality-assurance-guide.md)
 3. Git workflow questions → [guides/git-workflow-guide.md](guides/git-workflow-guide.md)
 4. Unit test failures → [guides/testing-guide.md](guides/testing-guide.md)
 
 **Still stuck?**
 - Review the complete [GETTING_STARTED.md](GETTING_STARTED.md) guide
-- Check [framework-validation-lessons.md](framework-validation-lessons.md) for known issues
-- Consult the [COMMIT_CHECKLIST.md](COMMIT_CHECKLIST.md) before submission
+- Check [framework-validation-lessons.md](reference/framework-validation-lessons.md) for known issues
+- Consult the [COMMIT_CHECKLIST.md](reference/COMMIT_CHECKLIST.md) before submission
 
 ---
 

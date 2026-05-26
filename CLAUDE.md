@@ -451,8 +451,8 @@ For detailed implementation guidance, see these comprehensive guides:
 
 ### Core Development Guides
 - **[Framework Integration Guide](docs/guides/framework-integration-guide.md)**: Complete framework verification process
-- **[Framework Validation Lessons](docs/framework-validation-lessons.md)**: Critical failure patterns and solutions (IMPORTANT)
-- **[Framework Troubleshooting](docs/framework-validation-troubleshooting.md)**: Quick fixes for common validation failures
+- **[Framework Validation Lessons](docs/reference/framework-validation-lessons.md)**: Critical failure patterns and solutions (IMPORTANT)
+- **[Framework Troubleshooting](docs/reference/framework-validation-troubleshooting.md)**: Quick fixes for common validation failures
 - **[Driver Templates](docs/templates/driver-templates.md)**: Standard driver source code templates and patterns
 - **[Current Project Templates](docs/templates/current-project-templates.md)**: Updated project templates (Makefile, builds.json, src.mk) - May 2026
 - **[Quality Assurance Guide](docs/guides/quality-assurance-guide.md)**: QA patterns and error prevention
