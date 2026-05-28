@@ -114,6 +114,12 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 **🔍 Available Quality Assurance Tools:**
 
 **Code Quality & Style:**
+- **🤖 Interactive Quality Check**: `/quality-check` - **PROACTIVE**: Run automated quality checks and offer to auto-fix issues
+  - Runs `.claude/tools/pre-commit/ci-check-changed.sh` on all changed files
+  - Auto-fixes code style issues (with user approval)
+  - Presents magic numbers and complex issues for manual review
+  - Verifies builds and tests still pass after fixes
+  - **When to use**: Before committing, after implementing features, or when user says "check code quality"
 - **Pre-commit Hooks**: `.claude/tools/pre-commit/install-hooks.sh` - AStyle, Cppcheck, branch validation
 - **Pattern Detection**: `.claude/tools/pre-commit/review-checker.py` - 6-month analysis, 62.5% automation
 - **SonarCloud Integration**: `.claude/tools/pre-commit/setup-local-sonar.sh` - Local static analysis
@@ -328,6 +334,7 @@ After plan approval, Claude executes WITHOUT asking intermediate questions:
 - **🚨 NO AI attribution** - Never add AI attribution to code files, commits, or headers - Use configured git user information
 - **🚨 Git configuration compliance** - Use configured git user.name and user.email from `git config --global`
 - **🚨 Quality enforcement** - NEVER use --no-verify flags, instead resolve pre-commit hook findings and quality issues properly
+- **🚨 PROACTIVE quality checks** - After implementing features or making changes, use `/quality-check` to find and fix issues before user notices them
 
 ---
 

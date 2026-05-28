@@ -30,7 +30,7 @@ Comprehensive analysis of 144 merged pull requests (507 review comments) from 6 
 | 6 | **Code Organization** | 21 | 4.1% | ✅ Automated |
 | 7 | **Typos/Grammar** | 14 | 2.8% | ⚠️ Partially |
 | 8 | **Constants/Magic Numbers** | 12 | 2.4% | ✅ Automated |
-| 9 | **Code Style** | 12 | 2.4% | ✅ Automated |
+| 9 | **Code Style** | 13 | 2.6% | ✅ Automated |
 | 10 | **Naming Convention** | 9 | 1.8% | ✅ Automated |
 | - | **Platform Compatibility** | 3 | 0.6% | ⚠️ Manual review |
 | - | **Uncategorized** | 190 | 37.5% | - |
@@ -261,6 +261,75 @@ error:
 - Excessive function complexity
 - Missing modularization opportunities
 - File organization issues
+
+### 9. Code Style Issues (13 occurrences, 2.6%)
+
+**Formatting, naming, and comment quality**
+
+**Pattern Examples:**
+
+```c
+// ❌ Redundant comments that restate what code does
+/* Initialize I2C */
+ret = no_os_i2c_init(&dev->i2c_desc, init_param->i2c_init);
+
+/* Set default page */
+dev->page = -1;
+
+/* Verify manufacturer ID */
+ret = ltm4700_verify_manufacturer_id(dev);
+
+// ❌ Inconsistent formatting
+if(condition){  // Missing space after 'if', improper bracing
+value=10;       // Missing spaces around '='
+}
+
+// ✅ Self-documenting code without redundant comments
+ret = no_os_i2c_init(&dev->i2c_desc, init_param->i2c_init);
+if (ret)
+    goto error_dev;
+
+dev->page = -1;  // Start with no page selected
+dev->lin16_exp = LTM4700_LIN16_EXPONENT;
+
+ret = ltm4700_verify_manufacturer_id(dev);
+if (ret)
+    goto error_i2c;
+
+// ✅ Good comment explains WHY, not WHAT
+/* Use LINEAR16 format for voltage (not LINEAR11) because
+ * it provides better resolution for the 0-5V range */
+*data = ltm4700_lin16_to_uval(word, dev->lin16_exp);
+```
+
+**Sample Review Comments:**
+- *"Comments seem redundant since the function names are self-explanatory."* (PR #2734)
+- *"9 redundant comments found that just restate what the code does. Comments should explain 'why', not 'what'."* (LTM4700, staging/ltm4700)
+- *"odd spacing after cast"*
+- *"no brackets for single expressions"*
+- *"Generates an AStyle Error"*
+
+**LTM4700 Case Study:**
+
+Detailed analysis of redundant comments in LTM4700 driver identified 9 instances:
+- **ltm4700.c**: 8 redundant comments (lines 272, 277, 283, 287, 292, 298, 303, 310)
+- **iio_ltm4700.c**: 1 refactoring artifact comment (line 366)
+
+See `.claude/data/ltm4700_redundant_comments.md` for complete analysis.
+
+**Automated Detection:**
+- Comments that exactly match function names
+- Comments with temporal words ("now", "currently") indicating refactoring artifacts
+- Spacing and indentation violations (via AStyle)
+- Bracket consistency for single-line conditionals
+- Comments before trivial variable assignments
+
+**Prevention Guidelines:**
+- Comments should explain **WHY**, not **WHAT**
+- Remove comments when code is self-documenting
+- Use descriptive names instead of comments
+- Explain complex algorithms, not obvious operations
+- Document non-obvious side effects or constraints
 
 ---
 

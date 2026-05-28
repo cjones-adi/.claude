@@ -358,12 +358,16 @@ elif [ ! -f ".claude/tools/pre-commit/review-checker.py" ]; then
 else
     # Run review checker on changed files
     REVIEW_OUTPUT=$(mktemp)
+    REVIEW_EXIT=0
 
-    if echo "$CHANGED_FILES" | xargs python3 .claude/tools/pre-commit/review-checker.py > "$REVIEW_OUTPUT" 2>&1; then
-        echo_success "Review pattern checks passed"
-        CHECKS_PASSED=$((CHECKS_PASSED + 1))
-    else
-        # Review checker found potential issues
+    echo "$CHANGED_FILES" | xargs python3 .claude/tools/pre-commit/review-checker.py > "$REVIEW_OUTPUT" 2>&1
+    REVIEW_EXIT=$?
+
+    # Check if any issues were found (look for "Found N potential issues" message)
+    ISSUES_FOUND=$(grep -c "Found .* potential issues" "$REVIEW_OUTPUT" 2>/dev/null || echo "0")
+
+    if [ "$ISSUES_FOUND" -gt 0 ]; then
+        # Issues found - show them (even if exit code is 0 for INFO/WARNING issues)
         echo_warning "Review checker found potential issues"
         echo ""
         cat "$REVIEW_OUTPUT"
@@ -382,10 +386,15 @@ else
         echo "  • Unused variables and headers"
         echo "  • Bit manipulation optimizations"
         echo "  • Documentation consistency"
+        echo "  • Redundant comments (Code Style)"
         echo ""
         echo "  These are suggestions, not failures - review and apply if relevant"
         echo ""
         # Don't fail the check for review suggestions - they're advisory
+        CHECKS_PASSED=$((CHECKS_PASSED + 1))
+    else
+        # No issues found
+        echo_success "Review pattern checks passed"
         CHECKS_PASSED=$((CHECKS_PASSED + 1))
     fi
 

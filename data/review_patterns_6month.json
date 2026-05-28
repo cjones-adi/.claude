@@ -161,7 +161,7 @@
     "Testing": 22,
     "Typos/Grammar": 14,
     "Platform Compatibility": 3,
-    "Code Style": 12,
+    "Code Style": 13,
     "Naming Convention": 9
   },
   "category_examples": {
@@ -700,6 +700,12 @@
         "body": "no brackets for single expressions.",
         "path": "drivers/led/ltc3220/ltc3220.c",
         "pr": 2795
+      },
+      {
+        "body": "9 redundant comments found that just restate what the code does. Comments should explain 'why', not 'what'. Examples: '/* Initialize I2C */' before no_os_i2c_init(), '/* Set default page */' before dev->page = -1. See .claude/data/ltm4700_redundant_comments.md for full analysis.",
+        "path": "drivers/power/ltm4700/ltm4700.c",
+        "pr": "staging/ltm4700",
+        "analysis_date": "2026-05-26"
       }
     ],
     "Naming Convention": [

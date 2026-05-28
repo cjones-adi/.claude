@@ -12,13 +12,15 @@ Top issues this prevents (updated priorities):
 4. Header Guards/Includes (24 occurrences, 4.7% of issues)
 5. Testing Issues (22 occurrences, 4.3% of issues)
 6. Code Organization (21 occurrences, 4.1% of issues)
-7. Constants/Magic Numbers (12 occurrences, 2.4% of issues)
-8. Naming Conventions (9 occurrences, 1.8% of issues)
+7. Code Style (13 occurrences, 2.6% of issues)
+8. Constants/Magic Numbers (12 occurrences, 2.4% of issues)
+9. Naming Conventions (9 occurrences, 1.8% of issues)
 
 Enhanced features:
 - Unused Headers Detection: Identifies potentially unused #include statements
 - Unused Variables Detection: Finds declared but unused local variables
 - Bit Operations: Suggests NO_OS_BIT/NO_OS_GENMASK usage for better code style
+- Redundant Comments: Flags comments that just restate obvious code (PR #2734, LTM4700)
 
 Automation Coverage: 62.5% of review issues prevented before PR submission.
 """
@@ -65,6 +67,15 @@ class ReviewChecker:
         if not os.path.exists(file_path):
             return []
 
+        # Skip test files (files starting with test_ or ending with _test.c)
+        filename = os.path.basename(file_path)
+        if filename.startswith('test_') or filename.endswith('_test.c') or filename.endswith('_test.h'):
+            return []
+
+        # Skip stub files
+        if 'stub' in filename.lower():
+            return []
+
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
@@ -88,6 +99,7 @@ class ReviewChecker:
         file_issues.extend(self._check_bit_operations(file_path, lines))
         file_issues.extend(self._check_unused_headers(file_path, lines, content))
         file_issues.extend(self._check_unused_variables(file_path, lines))
+        file_issues.extend(self._check_redundant_comments(file_path, lines))
 
         return file_issues
 
@@ -99,8 +111,9 @@ class ReviewChecker:
         filename = os.path.basename(file_path)
         expected_guard = f"__{filename.upper().replace('.', '_').replace('-', '_')}__"
 
-        has_ifndef = any(f"#ifndef {expected_guard}" in line for line in lines[:10])
-        has_define = any(f"#define {expected_guard}" in line for line in lines[:10])
+        # Search first 50 lines to accommodate standard ADI copyright header (typically 32 lines)
+        has_ifndef = any(f"#ifndef {expected_guard}" in line for line in lines[:50])
+        has_define = any(f"#define {expected_guard}" in line for line in lines[:50])
 
         if not has_ifndef or not has_define:
             suggested_guard = expected_guard
@@ -152,23 +165,65 @@ class ReviewChecker:
         """Check for error handling issues (most common: 30 occurrences)."""
         issues = []
 
-        for i, line in enumerate(lines, 1):
-            # Check for function calls without return value checking
-            if re.search(r'no_os_\w+\([^)]*\);', line) and not re.search(r'(ret|result|status)\s*=', line):
-                # Skip obvious cases that don't need checking
-                if not any(skip in line for skip in ['no_os_mdelay', 'no_os_udelay', 'no_os_free']):
-                    issues.append(Issue(
-                        file_path, i, IssueLevel.WARNING, "Error Handling",
-                        "no-OS function call without return value check",
-                        "Consider: ret = no_os_function(); if (ret < 0) return ret;"
-                    ))
+        # Track if we're in an error cleanup section or cleanup function
+        in_cleanup = False
+        in_cleanup_function = False
 
-            # Check for missing null pointer checks
-            if re.search(r'->\w+', line) and not any(check in line for check in ['if', '&&', '||', '?']):
+        for i, line in enumerate(lines, 1):
+            # Exit cleanup section at next function definition (check this FIRST before setting new state)
+            if re.match(r'^(int|void|static\s+(int|void))\s+\w+\s*\(', line) and not any(keyword in line for keyword in ['_remove(', '_destroy(', '_cleanup(', '_deinit(', '_exit(', '_close(']):
+                # New non-cleanup function found - reset both flags
+                in_cleanup = False
+                in_cleanup_function = False
+
+            # Detect cleanup/destructor function definitions
+            # Check if line is a function definition and name contains cleanup keywords
+            if re.match(r'^(int|void|static\s+(int|void))\s+\w+\s*\(', line):
+                # Check if function name contains cleanup keywords
+                if any(keyword in line for keyword in ['_remove(', '_destroy(', '_cleanup(', '_deinit(', '_exit(', '_close(']):
+                    in_cleanup_function = True
+
+            # Detect cleanup/error labels (error_*, cleanup_*, err_*, etc.)
+            if re.match(r'^\s*(error_|cleanup_|err_|clean_|fail_)\w+:', line):
+                in_cleanup = True
+
+            # Exit cleanup section at function end
+            if re.match(r'^}', line.strip()):
+                in_cleanup = False
+                # Only reset in_cleanup_function if we're at file level (no indentation)
+                if not line.startswith('\t') and not line.startswith(' '):
+                    in_cleanup_function = False
+            # Skip error handling checks in cleanup sections/functions (return values intentionally ignored)
+            if not in_cleanup and not in_cleanup_function:
+                # Check for function calls without return value checking
+                if re.search(r'no_os_\w+\([^)]*\);', line) and not re.search(r'(ret|result|status)\s*=', line):
+                    # Skip if the call is in a return statement (error is propagated to caller)
+                    if 'return ' in line and 'no_os_' in line:
+                        continue
+
+                    # Skip void-returning functions (no return value to check)
+                    void_functions = [
+                        'no_os_mdelay', 'no_os_udelay', 'no_os_ndelay',  # Delay functions
+                        'no_os_free',  # Memory deallocation
+                        'no_os_crc8_populate_msb', 'no_os_crc8_populate_lsb',  # CRC table population
+                        'no_os_put_unaligned_be16', 'no_os_put_unaligned_be24',  # Unaligned writes
+                        'no_os_put_unaligned_be32', 'no_os_put_unaligned_le16',
+                        'no_os_put_unaligned_le24', 'no_os_put_unaligned_le32',
+                    ]
+                    if not any(skip in line for skip in void_functions):
+                        issues.append(Issue(
+                            file_path, i, IssueLevel.WARNING, "Error Handling",
+                            "no-OS function call without return value check",
+                            "Consider: ret = no_os_function(); if (ret < 0) return ret;"
+                        ))
+
+            # Check for missing null pointer checks (skip in cleanup sections/functions)
+            if not in_cleanup and not in_cleanup_function and re.search(r'->\w+', line) and not any(check in line for check in ['if', '&&', '||', '?']):
                 # Look for obvious pointer dereferences without null checks
                 if re.search(r'\b\w+->(?:spi_desc|gpio_\w+|i2c_desc)', line):
-                    # Check if there's a null check in the previous few lines
-                    prev_lines = lines[max(0, i-5):i]
+                    # Check if there's a null check in the function (look back up to 20 lines)
+                    # This accommodates common pattern: null check at function start, usage 10+ lines later
+                    prev_lines = lines[max(0, i-20):i]
                     has_null_check = any(re.search(r'if\s*\(.*!\w+', prev_line) for prev_line in prev_lines)
                     if not has_null_check:
                         issues.append(Issue(
@@ -215,27 +270,58 @@ class ReviewChecker:
     def _check_magic_numbers(self, file_path: str, lines: List[str]) -> List[Issue]:
         """Check for magic numbers (9 occurrences in analysis)."""
         issues = []
+        in_comment_block = False
 
         for i, line in enumerate(lines, 1):
-            # Skip comments and strings
-            if '//' in line or '/*' in line or '"' in line:
+            # Skip copyright header (typically first 40 lines)
+            if i <= 40:
+                # Check for copyright, license, author keywords
+                if any(keyword in line.lower() for keyword in ['copyright', 'license', 'author', '@file', '@brief', 'redistribution']):
+                    continue
+
+            # Track multi-line comment blocks
+            if '/*' in line:
+                in_comment_block = True
+            if '*/' in line:
+                in_comment_block = False
                 continue
 
-            # Find numeric literals
-            numbers = re.findall(r'\b(\d+|0x[0-9A-Fa-f]+)\b', line)
+            # Skip if inside multi-line comment
+            if in_comment_block:
+                continue
+
+            # Skip comment-only lines (single-line and inline)
+            stripped = line.strip()
+            if stripped.startswith('//') or stripped.startswith('/*') or stripped.startswith('*'):
+                continue
+
+            # For lines with inline comments, only check code before comment
+            code_part = line
+            if '//' in line:
+                code_part = line.split('//')[0]
+            if '/*' in line and '*/' in line:
+                # Remove inline /* ... */ comments
+                code_part = re.sub(r'/\*.*?\*/', '', code_part)
+
+            # Skip strings
+            if '"' in code_part:
+                continue
+
+            # Find numeric literals in the code part only
+            numbers = re.findall(r'\b(\d+|0x[0-9A-Fa-f]+)\b', code_part)
 
             for number in numbers:
                 if number not in self.allowed_magic_numbers:
                     # Skip if it's already in a #define
-                    if '#define' in line:
+                    if '#define' in code_part:
                         continue
 
                     # Skip if it's in array bounds or bit shifts
-                    if re.search(rf'\[.*{re.escape(number)}.*\]|<<\s*{re.escape(number)}|>>\s*{re.escape(number)}', line):
+                    if re.search(rf'\[.*{re.escape(number)}.*\]|<<\s*{re.escape(number)}|>>\s*{re.escape(number)}', code_part):
                         continue
 
                     # Check for delay values
-                    if 'delay' in line.lower() and int(number, 0 if not number.startswith('0x') else 16) > 10:
+                    if 'delay' in code_part.lower() and int(number, 0 if not number.startswith('0x') else 16) > 10:
                         issues.append(Issue(
                             file_path, i, IssueLevel.INFO, "Magic Numbers",
                             f"Consider defining delay constant: {number}",
@@ -245,7 +331,7 @@ class ReviewChecker:
                     # Check for large numbers that might be register addresses/values
                     try:
                         num_val = int(number, 0 if not number.startswith('0x') else 16)
-                        if num_val > 255 and 'define' not in line.lower():
+                        if num_val > 255 and 'define' not in code_part.lower():
                             issues.append(Issue(
                                 file_path, i, IssueLevel.INFO, "Magic Numbers",
                                 f"Large number might need a constant: {number}",
@@ -388,6 +474,13 @@ class ReviewChecker:
                     mask_name = mask_match.group(1)
                     mask_value = mask_match.group(2)
 
+                    # Skip well-known flag combinations (not field masks)
+                    # These are clearer as hex literals:
+                    # - *_ALL: Combination of all flags (e.g., STATUS_ALL_TYPE_MSK = 0xFF)
+                    # - Common values: 0xFF (all bits), 0x00 (no bits)
+                    if '_ALL' in mask_name or mask_value.upper() in ['0xFF', '0x00', '0xFFFF', '0xFFFFFFFF']:
+                        continue
+
                     # Convert hex to int to check if it's a continuous bit field
                     try:
                         mask_int = int(mask_value, 16)
@@ -395,7 +488,8 @@ class ReviewChecker:
                         if mask_int > 0 and (mask_int & (mask_int + 1)) == 0:
                             # It's a continuous bit field from bit 0
                             high_bit = mask_int.bit_length() - 1
-                            if high_bit > 0 and '_MSK' in mask_name:
+                            # Only suggest for masks that are not single bits and not the well-known patterns above
+                            if high_bit > 1 and '_MSK' in mask_name:
                                 issues.append(Issue(
                                     file_path, i, IssueLevel.INFO, "Bit Operations",
                                     f"Consider using NO_OS_GENMASK({high_bit}, 0) for mask definition",
@@ -431,6 +525,20 @@ class ReviewChecker:
         """Check for potentially unused header includes."""
         issues = []
 
+        # Only check driver implementation files
+        # Skip project files - they have different usage patterns
+        # (extern declarations, platform-specific constants, application code)
+        if 'projects/' in file_path:
+            return issues
+
+        # Only check files in drivers/ directory
+        if not 'drivers/' in file_path:
+            return issues
+
+        # Skip driver header files - they define interfaces, usage is external
+        if file_path.endswith('.h'):
+            return issues
+
         # Extract all #include statements
         include_lines = []
         for i, line in enumerate(lines, 1):
@@ -447,7 +555,8 @@ class ReviewChecker:
 
         # Headers that provide only macros or typedefs (harder to detect usage)
         macro_headers = {
-            'no_os_error.h', 'no_os_util.h', 'no_os_units.h'
+            'no_os_error.h', 'no_os_util.h', 'no_os_units.h',
+            'iio_types.h'  # Provides macros like END_ATTRIBUTES_ARRAY, STRUCT_IIO_CHANNEL
         }
 
         for line_num, header_name, include_line in include_lines:
@@ -495,6 +604,15 @@ class ReviewChecker:
             # Use special patterns if available, otherwise use general patterns
             if header_name in special_patterns:
                 patterns = special_patterns[header_name]
+            # Check for IIO driver header pattern: iio_<device>.h → <device>_iio_* functions
+            elif header_name.startswith('iio_') and header_name.endswith('.h') and header_name != 'iio.h' and header_name != 'iio_app.h':
+                # Extract device name from iio_<device>.h
+                device_name = header_base.replace('iio_', '', 1)
+                patterns = [
+                    rf'\b{re.escape(device_name)}_iio_\w+',  # device_iio_* functions
+                    rf'\bstruct\s+{re.escape(device_name)}_iio_\w+',  # struct device_iio_*
+                    rf'\b{re.escape(device_name.upper())}_IIO_\w+',  # DEVICE_IIO_* constants
+                ]
             else:
                 patterns = usage_patterns
 
@@ -597,6 +715,117 @@ class ReviewChecker:
                     f"Variable '{var_name}' may be unused",
                     "Remove unused variables or add '(void)var_name;' if intentionally unused"
                 ))
+
+        return issues
+
+    def _check_redundant_comments(self, file_path: str, lines: List[str]) -> List[Issue]:
+        """
+        Check for redundant comments that just restate what code does.
+        Based on PR #2734 (max17616) and LTM4700 analysis (9 occurrences found).
+
+        Pattern Detection:
+        1. Comments that match function names (e.g., "/* Initialize I2C */" before no_os_i2c_init())
+        2. Comments with temporal words like "now" (refactoring artifacts)
+        3. Comments before trivial variable assignments
+        4. Comments that duplicate conditional logic
+        """
+        issues = []
+
+        # Common redundant comment patterns
+        redundant_patterns = [
+            # Pattern 1: Comment matches function name pattern
+            (r'/\*\s*(Initialize|Setup|Configure|Set|Get|Read|Write|Verify|Check)\s+(\w+)\s*\*/',
+             r'(\w+_init|\w+_setup|\w+_config|\w+_set|\w+_get|\w+_read|\w+_write|\w+_verify|\w+_check)',
+             "Comment restates function name"),
+
+            # Pattern 2: Temporal refactoring artifacts
+            (r'/\*.*\b(now|currently|updated?|changed?|fixed?)\b.*\*/',
+             None,
+             "Temporal comment suggests refactoring leftover"),
+
+            # Pattern 3: Comments before simple assignments
+            (r'/\*\s*Set\s+\w+\s*\*/',
+             r'\w+\s*=\s*[\w\-]+\s*;',
+             "Comment restates obvious assignment"),
+        ]
+
+        for i, line in enumerate(lines, 1):
+            # Skip if not a comment line
+            if not re.search(r'/\*.*\*/', line) and not line.strip().startswith('//'):
+                continue
+
+            # Get the next non-empty line for context
+            next_line = ""
+            for j in range(i, min(i + 3, len(lines))):
+                if j < len(lines) and lines[j].strip() and not lines[j].strip().startswith('*'):
+                    next_line = lines[j]
+                    break
+
+            # Check Pattern 1: Comment matches function call
+            comment_match = re.search(r'/\*\s*(Initialize|Setup|Configure|Set|Read|Write|Verify|Check|Determine)\s+(\w+)\s*(\w+)?\s*\*/', line, re.IGNORECASE)
+            if comment_match and next_line:
+                action = comment_match.group(1).lower()
+                subject = comment_match.group(2).lower()
+
+                # Map common action abbreviations
+                action_abbrev = action
+                if action == "initialize":
+                    action_abbrev = "init"
+                elif action == "configure":
+                    action_abbrev = "config"
+
+                # Strip assignment from next line for function name matching
+                clean_next_line = re.sub(r'^\s*(ret|result|status)\s*=\s*', '', next_line)
+
+                # Check if next line has matching function call
+                function_patterns = [
+                    rf'{subject}.*{action}',  # e.g., i2c_initialize
+                    rf'{subject}.*{action_abbrev}',  # e.g., i2c_init
+                    rf'{action}.*{subject}',  # e.g., initialize_i2c
+                    rf'{action_abbrev}.*{subject}',  # e.g., init_i2c
+                    rf'no_os_{action}',       # e.g., no_os_initialize
+                    rf'no_os_{action_abbrev}',  # e.g., no_os_init
+                    rf'no_os_{subject}.*{action}',  # e.g., no_os_i2c_initialize
+                    rf'no_os_{subject}.*{action_abbrev}',  # e.g., no_os_i2c_init
+                    rf'\w+_{action}_{subject}',  # e.g., ltm4700_verify_manufacturer
+                    rf'\w+_{action_abbrev}_{subject}',  # e.g., ltm4700_init_i2c
+                ]
+
+                if any(re.search(pattern, clean_next_line, re.IGNORECASE) for pattern in function_patterns):
+                    issues.append(Issue(
+                        file_path, i, IssueLevel.INFO, "Code Style",
+                        f"Redundant comment: function name is self-documenting",
+                        f"Remove comment - '{next_line.strip()}' is clear without explanation"
+                    ))
+
+            # Check Pattern 2: Temporal words in comments
+            if re.search(r'/\*.*\b(now|currently)\b.*\*/', line, re.IGNORECASE):
+                issues.append(Issue(
+                    file_path, i, IssueLevel.INFO, "Code Style",
+                    "Temporal comment suggests refactoring artifact",
+                    "Remove or rephrase to explain 'why', not 'what changed'"
+                ))
+
+            # Check Pattern 3: Comment before simple assignment
+            if re.search(r'/\*\s*(Set|Initialize)\s+(default\s+)?\w+\s*\*/', line, re.IGNORECASE) and next_line:
+                # Check if next line is a simple assignment
+                if re.search(r'^\s*\w+(\.\w+|\->\w+)?\s*=\s*[\w\-]+\s*;', next_line):
+                    # Not redundant if it explains the value choice
+                    if not any(keyword in line.lower() for keyword in ['because', 'since', 'for', 'to ensure']):
+                        issues.append(Issue(
+                            file_path, i, IssueLevel.INFO, "Code Style",
+                            "Redundant comment before simple assignment",
+                            "Remove comment - assignment is self-explanatory"
+                        ))
+
+            # Check Pattern 4: Comment duplicates conditional logic
+            if re.search(r'/\*.*if\s+\w+.*\*/', line, re.IGNORECASE) and next_line:
+                if re.search(r'if\s*\(', next_line):
+                    issues.append(Issue(
+                        file_path, i, IssueLevel.INFO, "Code Style",
+                        "Redundant comment duplicates conditional statement",
+                        "Remove comment - the if statement is clear"
+                    ))
 
         return issues
 
