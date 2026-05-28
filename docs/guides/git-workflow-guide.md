@@ -290,6 +290,165 @@ This adds: `Signed-off-by: Your Name <your.email@analog.com>`
 
 ## Advanced Git Operations
 
+### Fixup Commits for Quality Fixes
+
+When quality checks (code style, magic numbers, etc.) identify issues after creating your commit series, use **fixup commits** to organize corrections cleanly.
+
+#### When to Use Fixup Commits
+
+**Ideal scenarios:**
+- ✅ After automated quality checks find issues (AStyle, review-checker.py)
+- ✅ Post-commit code style improvements
+- ✅ Removing redundant comments or magic numbers
+- ✅ Small refactoring that logically belongs to an existing commit
+- ✅ Addressing review feedback for specific commits
+
+**Not appropriate for:**
+- ❌ New features or functionality
+- ❌ Bug fixes unrelated to the original commit
+- ❌ Changes that span multiple original commits
+
+#### Fixup Commit Workflow
+
+**Step 1: Identify target commits**
+```bash
+# Find commits that modified the files you're fixing
+git log --oneline -- path/to/file.c
+
+# Example output:
+# 7bf79390a drivers: power: ltm4700: Add IIO support for ltm4700
+# e3e812bd0 drivers: power: ltm4700: Add driver support for ltm4700
+```
+
+**Step 2: Create fixup commits**
+```bash
+# Stage files and create fixup commit referencing target commit
+git add drivers/power/ltm4700/ltm4700.c drivers/power/ltm4700/ltm4700.h
+git commit --fixup=e3e812bd0
+
+# Or use short hash
+git commit --fixup=e3e812
+
+# Create additional fixups for other commits
+git add drivers/power/ltm4700/iio_ltm4700.c
+git commit --fixup=7bf79390a
+
+git add projects/ltm4700/src/common/common_data.c
+git commit --fixup=fb0b93465
+```
+
+**Step 3: Verify fixup commits created**
+```bash
+git log --oneline -10
+
+# Output shows fixup commits:
+# 15e89b16e fixup! projects: ltm4700: Add project for ltm4700
+# fbaeaeb19 fixup! drivers: power: ltm4700: Add IIO support for ltm4700
+# 8914f1d5d fixup! drivers: power: ltm4700: Add driver support for ltm4700
+# f31c79fe2 tests: drivers: power: ltm4700: Add unit tests for ltm4700
+# bc5fa434f projects: ltm4700: Add README documentation for project
+# fb0b93465 projects: ltm4700: Add project for ltm4700
+# de1c942dd drivers: power: ltm4700: Add README documentation for ltm4700
+# 7bf79390a drivers: power: ltm4700: Add IIO support for ltm4700
+# e3e812bd0 drivers: power: ltm4700: Add driver support for ltm4700
+```
+
+**Step 4: Squash fixups into original commits**
+```bash
+# Interactive rebase with autosquash
+# Count commits: original 6 commits + 3 fixups = 9 total
+git rebase -i --autosquash HEAD~9
+
+# Git automatically reorders and marks fixup commits:
+# pick e3e812bd0 drivers: power: ltm4700: Add driver support for ltm4700
+# fixup 8914f1d5d fixup! drivers: power: ltm4700: Add driver support for ltm4700
+# pick 7bf79390a drivers: power: ltm4700: Add IIO support for ltm4700
+# fixup fbaeaeb19 fixup! drivers: power: ltm4700: Add IIO support for ltm4700
+# pick de1c942dd drivers: power: ltm4700: Add README documentation for ltm4700
+# pick fb0b93465 projects: ltm4700: Add project for ltm4700
+# fixup 15e89b16e fixup! projects: ltm4700: Add project for ltm4700
+# pick bc5fa434f projects: ltm4700: Add README documentation for project
+# pick f31c79fe2 tests: drivers: power: ltm4700: Add unit tests for ltm4700
+
+# Save and exit - fixups are automatically squashed!
+```
+
+**Step 5: Verify clean history**
+```bash
+git log --oneline -6
+
+# Output shows clean 6-commit pattern:
+# a1b2c3d4e tests: drivers: power: ltm4700: Add unit tests for ltm4700
+# b2c3d4e5f projects: ltm4700: Add README documentation for project
+# c3d4e5f6g projects: ltm4700: Add project for ltm4700
+# d4e5f6g7h drivers: power: ltm4700: Add README documentation for ltm4700
+# e5f6g7h8i drivers: power: ltm4700: Add IIO support for ltm4700
+# f6g7h8i9j drivers: power: ltm4700: Add driver support for ltm4700
+```
+
+#### Real-World Example: Quality Check Fixes
+
+```bash
+# Scenario: After running quality checks, found issues in multiple commits
+
+# 1. Quality checker found 7 code style issues + 4 magic numbers
+./.claude/tools/pre-commit/ci-check-changed.sh
+
+# 2. Fix issues in driver core files
+git add drivers/power/ltm4700/ltm4700.c drivers/power/ltm4700/ltm4700.h
+git commit --fixup=e3e812bd0  # Core driver commit
+# Created: fixup! drivers: power: ltm4700: Add driver support for ltm4700
+# - Removed 6 redundant comments
+# - Replaced magic number 0x7FF with LTM4700_LIN11_MANTISSA_MSK
+
+# 3. Fix issues in IIO driver
+git add drivers/power/ltm4700/iio_ltm4700.c
+git commit --fixup=7bf79390a  # IIO commit
+# Created: fixup! drivers: power: ltm4700: Add IIO support for ltm4700
+# - Removed 1 redundant comment
+
+# 4. Fix issues in project files
+git add projects/ltm4700/src/common/common_data.c \
+        projects/ltm4700/src/examples/basic/basic_example.c
+git commit --fixup=fb0b93465  # Project commit
+# Created: fixup! projects: ltm4700: Add project for ltm4700
+# - Added I2C_FAST_MODE_HZ constant (replaced 400000)
+# - Added TELEMETRY_DISPLAY_DELAY_MS constant (replaced 500)
+
+# 5. Squash all fixups
+git rebase -i --autosquash HEAD~9
+
+# Result: Clean 6-commit history with all quality fixes integrated
+```
+
+#### Benefits of Fixup Commits
+
+- ✅ **Clean History**: Quality fixes integrated into logical commits
+- ✅ **Automatic Organization**: `--autosquash` handles reordering
+- ✅ **Review Friendly**: Each commit remains focused on its purpose
+- ✅ **Traceable**: Easy to see which commit received fixes
+- ✅ **Revertable**: Each commit is complete and self-contained
+
+#### Alternative: Amending Individual Commits
+
+For single-commit fixes, you can also use `git commit --amend`:
+
+```bash
+# If only the most recent commit needs changes
+git add file.c
+git commit --amend --no-edit
+
+# If earlier commit needs changes (more complex)
+git rebase -i HEAD~3
+# Mark commit as 'edit' instead of 'pick'
+# Make changes
+git add file.c
+git commit --amend --no-edit
+git rebase --continue
+```
+
+**Recommendation**: Use `--fixup` for multiple commits, `--amend` only for the most recent commit.
+
 ### Handling Merge Conflicts
 
 ```bash
@@ -312,7 +471,9 @@ git rebase -i HEAD~6        # Interactive rebase last 6 commits
 # Options during interactive rebase:
 # pick - use commit as-is
 # squash - combine with previous commit
+# fixup - like squash, but discard commit message
 # reword - edit commit message
+# edit - stop for amending
 # drop - remove commit entirely
 ```
 
