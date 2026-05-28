@@ -4,8 +4,15 @@
 // fixed due to external dependencies or framework requirements.
 //
 // Format: [error id]:[filename]
+// Note: Line numbers are NOT supported in suppressions file (unlike --suppress CLI option)
 // Example: constParameterPointer:path/to/file.c
 
 // Test stub files must match external function signatures exactly
 // These cannot be made const without breaking compatibility
 constParameterPointer:tests/drivers/power/ltm4700/test/iio_stubs.c
+constParameterPointer:tests/drivers/power/lt8460/test/support/iio_stubs.c
+
+// IIO framework callback functions must match the framework's signature
+// even though the implementation doesn't modify the buffer
+// Changing to const would require casting function pointers
+constParameterCallback:drivers/power/lt8460/iio_lt8460.c

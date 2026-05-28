@@ -650,7 +650,9 @@ class ReviewChecker:
 
         for i, line in enumerate(lines, 1):
             # Skip comments, strings, and preprocessor directives
-            if re.match(r'^\s*(//|/\*|\*|#)', line):
+            # Note: \*\s+ ensures we match comment continuation lines (* comment)
+            # but NOT pointer dereferences (*variable = value)
+            if re.match(r'^\s*(//|/\*|\*\s+|#)', line):
                 continue
 
             # Look for variable declarations

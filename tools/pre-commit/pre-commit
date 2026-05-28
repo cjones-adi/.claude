@@ -167,6 +167,11 @@ check_cppcheck() {
         cppcheck_opts="$cppcheck_opts --suppressions-list=.cppcheckignore"
     fi
 
+    # Add Claude-specific suppressions if file exists
+    if [ -f ".claude/.cppcheckignore" ]; then
+        cppcheck_opts="$cppcheck_opts --suppressions-list=.claude/.cppcheckignore"
+    fi
+
     if [ -f "./ci/config.cppcheck" ]; then
         cppcheck_opts="$cppcheck_opts --library=./ci/config.cppcheck"
     fi
