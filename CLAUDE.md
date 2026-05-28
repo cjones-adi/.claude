@@ -113,13 +113,34 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 
 **🔍 Available Quality Assurance Tools:**
 
+**🚨 MANDATORY: Agentic Quality Check Workflow**
+
+**When user says "check code quality" or "quality check":**
+```
+→ IMMEDIATELY invoke: Task(subagent_type="driver-code-reviewer-no-os", ...)
+→ DO NOT manually run scripts
+→ DO NOT manually analyze and fix issues
+→ LET THE AGENT handle the complete workflow autonomously
+```
+
 **Code Quality & Style:**
-- **🤖 Interactive Quality Check**: `/quality-check` - **PROACTIVE**: Run automated quality checks and offer to auto-fix issues
-  - Runs `.claude/tools/pre-commit/ci-check-changed.sh` on all changed files
-  - Auto-fixes code style issues (with user approval)
-  - Presents magic numbers and complex issues for manual review
-  - Verifies builds and tests still pass after fixes
-  - **When to use**: Before committing, after implementing features, or when user says "check code quality"
+- **🤖 PRIMARY: driver-code-reviewer-no-os Agent** - **MANDATORY for quality checks**
+  - **Invocation**: `Task tool with subagent_type="driver-code-reviewer-no-os"`
+  - **Autonomous workflow**:
+    1. Runs `.claude/tools/pre-commit/ci-check-changed.sh` automatically
+    2. Analyzes all findings (formatting, static analysis, builds, tests)
+    3. Plans fixes for all detected issues
+    4. Implements fixes autonomously
+    5. Verifies fixes by re-running quality checks
+    6. Reports comprehensive summary
+  - **When to use**:
+    - User says "check code quality"
+    - Before committing code
+    - After implementing features
+    - When quality validation is needed
+- **🛠️ FALLBACK: Manual Script Execution** - Only use if agent invocation fails
+  - **Tool**: `.claude/tools/pre-commit/ci-check-changed.sh [base-branch]`
+  - **Use only when**: Agent cannot be invoked or specific script testing is needed
 - **Pre-commit Hooks**: `.claude/tools/pre-commit/install-hooks.sh` - AStyle, Cppcheck, branch validation
 - **Pattern Detection**: `.claude/tools/pre-commit/review-checker.py` - 6-month analysis, 62.5% automation
 - **SonarCloud Integration**: `.claude/tools/pre-commit/setup-local-sonar.sh` - Local static analysis
@@ -232,6 +253,28 @@ projects/<device_name>/
 
 ## 🤖 Enhanced Development with Claude Code
 
+### 📋 Quick Reference: User Request → Correct Agent Response
+
+**CRITICAL: These are MANDATORY agentic workflows - invoke agents IMMEDIATELY, do NOT manually execute:**
+
+| User Request | Correct Response | Agent/Tool |
+|-------------|------------------|------------|
+| **"Check code quality"** | ✅ Invoke `driver-code-reviewer-no-os` agent | `Task(subagent_type="driver-code-reviewer-no-os", ...)` |
+| **"Quality check"** | ✅ Invoke `driver-code-reviewer-no-os` agent | `Task(subagent_type="driver-code-reviewer-no-os", ...)` |
+| **"Review my code"** | ✅ Invoke `driver-code-reviewer-no-os` agent | `Task(subagent_type="driver-code-reviewer-no-os", ...)` |
+| **"Create driver for X"** | ✅ Invoke `driver-planner-no-os` agent | `Task(subagent_type="driver-planner-no-os", ...)` |
+| **"Build project X"** | ✅ Check `projects/X/builds.json` first | Read builds.json → make with exact flags |
+
+**❌ NEVER do these manually:**
+- Running quality check scripts yourself
+- Analyzing cppcheck output yourself
+- Fixing issues one-by-one yourself
+- Building without checking builds.json first
+
+**✅ ALWAYS let agents handle complete workflows autonomously**
+
+---
+
 **🚨 MANDATORY WORKFLOW: Claude MUST follow this exact process for ALL driver development:**
 
 ### **Phase 0: Framework Verification (MANDATORY FIRST STEP)**
@@ -334,26 +377,58 @@ After plan approval, Claude executes WITHOUT asking intermediate questions:
 - **🚨 NO AI attribution** - Never add AI attribution to code files, commits, or headers - Use configured git user information
 - **🚨 Git configuration compliance** - Use configured git user.name and user.email from `git config --global`
 - **🚨 Quality enforcement** - NEVER use --no-verify flags, instead resolve pre-commit hook findings and quality issues properly
-- **🚨 PROACTIVE quality checks** - After implementing features or making changes, use `/quality-check` to find and fix issues before user notices them
+- **🚨 MANDATORY quality checks** - When user requests "check code quality":
+  - **PRIMARY**: IMMEDIATELY invoke `driver-code-reviewer-no-os` agent (autonomous end-to-end workflow)
+  - **FALLBACK**: Run `.claude/tools/pre-commit/ci-check-changed.sh` only if agent invocation fails
+  - **NEVER**: Manually run scripts, analyze, and fix issues step-by-step
 
 ---
 
 ## Build Commands
 
-### Primary Build Commands
+### 🚨 CRITICAL: Always Check builds.json First
+
+**Before building ANY project, check `projects/<project>/builds.json` for the correct build flags.**
+
+### Individual Project Builds (Recommended)
+
+```bash
+# 1. Check the project's builds.json for correct flags
+cat projects/<project>/builds.json
+
+# 2. Use make with the EXACT flags from builds.json
+cd projects/<project>
+make <flags_from_builds_json>
+
+# Example for LT8460:
+# builds.json shows: "BASIC_EXAMPLE=y IIO_EXAMPLE=n TARGET=max32665"
+cd projects/lt8460
+make BASIC_EXAMPLE=y IIO_EXAMPLE=n TARGET=max32665
+
+# Or use the CI script which automatically reads builds.json:
+.claude/tools/pre-commit/ci-check-changed.sh
+```
+
+### Batch Build Commands (For CI/Testing Multiple Projects)
 
 ```bash
 # Build all projects
 python3 tools/scripts/build_projects.py . -export_dir exports -log_dir logs
 
-# Build specific project
+# Build specific project (uses builds.json automatically)
 python3 tools/scripts/build_projects.py . -project=<project_name>
 
-# Build for specific platform
-python3 tools/scripts/build_projects.py . -platform=<platform> -project=<project_name>
-
+# Note: These scripts read builds.json automatically
 # Supported platforms: xilinx, stm32, maxim, mbed, pico, aducm3029, lattice
 ```
+
+### Key Build Variables
+
+**Common variables found in builds.json:**
+- `TARGET=<chip>` - Specific MCU/SoC (e.g., max32665, max78000, stm32f4)
+- `BASIC_EXAMPLE=y/n` - Enable basic example
+- `IIO_EXAMPLE=y/n` - Enable IIO example
+- Additional project-specific flags as defined in builds.json
 
 ### Framework Validation
 
