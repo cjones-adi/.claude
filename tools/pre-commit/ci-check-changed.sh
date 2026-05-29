@@ -33,35 +33,35 @@ usage() {
     echo "Usage: $0 [options] [base-branch]"
     echo ""
     echo "Options:"
-    echo "  --all-changes      Check ALL differences vs base branch"
-    echo "                     (includes other people's changes pulled during rebase)"
+    echo "  --since-divergence Check only changes since branch divergence point"
+    echo "                     (excludes commits before merge-base with base branch)"
     echo "  --help             Show this help"
     echo ""
     echo "Arguments:"
     echo "  base-branch        Compare against this branch (default: upstream/main)"
     echo ""
     echo "Modes:"
-    echo "  Default:           Shows only YOUR changes since branch divergence"
-    echo "                     (excludes changes from main you pulled in)"
+    echo "  Default:           Shows ALL differences vs base branch"
+    echo "                     (all commits on your branch vs upstream/main)"
     echo ""
-    echo "  --all-changes:     Shows ALL differences vs base branch"
-    echo "                     (includes all changes, even from rebase)"
+    echo "  --since-divergence: Shows only changes since branch divergence"
+    echo "                     (uses merge-base, excludes earlier commits)"
     echo ""
     echo "Examples:"
-    echo "  $0                         # Only YOUR changes (default)"
-    echo "  $0 --all-changes           # All differences vs upstream/main"
-    echo "  $0 origin/main             # Only YOUR changes vs origin/main"
+    echo "  $0                         # All differences vs upstream/main (default)"
+    echo "  $0 --since-divergence      # Only changes since branch split from upstream/main"
+    echo "  $0 origin/main             # All differences vs origin/main"
     echo "  $0 HEAD~5                  # Changes in last 5 commits"
 }
 
 # Parse arguments
-SINCE_REBASE=true
+SINCE_REBASE=false
 BASE_BRANCH="upstream/main"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --all-changes)
-            SINCE_REBASE=false
+        --since-divergence)
+            SINCE_REBASE=true
             shift
             ;;
         --help)
@@ -101,13 +101,30 @@ if [ "$SINCE_REBASE" = "true" ]; then
     fi
 
     COMPARE_POINT="$MERGE_BASE"
-    echo_info "Mode: Only YOUR changes since branch divergence"
+    echo_info "Mode: Only changes since branch divergence (--since-divergence)"
     echo_info "Merge-base: $(git log --oneline -1 $MERGE_BASE)"
-    echo_info "Your commits: $(git rev-list --count $MERGE_BASE..HEAD)"
+    echo_info "Commits since divergence: $(git rev-list --count $MERGE_BASE..HEAD)"
 else
-    COMPARE_POINT="$BASE_BRANCH"
-    echo_info "Mode: All differences vs $BASE_BRANCH (--all-changes)"
-    echo_info "Tip: Remove --all-changes to check only YOUR changes since divergence"
+    # Find first commit after base branch (to skip it)
+    FIRST_COMMIT=$(git rev-list "$BASE_BRANCH..HEAD" | tail -1)
+
+    if [ -z "$FIRST_COMMIT" ]; then
+        # No commits on branch yet, use base branch
+        COMPARE_POINT="$BASE_BRANCH"
+        echo_info "Mode: All differences vs $BASE_BRANCH"
+        echo_info "Total commits on branch: 0"
+    else
+        # Use first commit as base (excludes it from check)
+        COMPARE_POINT="$FIRST_COMMIT"
+        TOTAL_COMMITS=$(git rev-list --count "$BASE_BRANCH..HEAD")
+        COMMITS_TO_CHECK=$(git rev-list --count "$FIRST_COMMIT..HEAD")
+
+        echo_info "Mode: All differences starting from SECOND commit on branch"
+        echo_info "Base: $BASE_BRANCH ($(git log --oneline -1 $BASE_BRANCH))"
+        echo_info "First commit (excluded): $(git log --oneline -1 $FIRST_COMMIT)"
+        echo_info "Total commits on branch: $TOTAL_COMMITS"
+        echo_info "Commits to check: $COMMITS_TO_CHECK (excludes first commit)"
+    fi
 fi
 
 echo ""
