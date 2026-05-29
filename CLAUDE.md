@@ -211,6 +211,7 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 - **No AI Attribution**: NEVER include AI attribution in code files, commits, or headers (no Co-Authored-By Claude, no "Generated with" mentions, etc.) - Use configured git user information
 - **Git Configuration**: Use configured git user.name and user.email from `git config --global` for all commits and author attribution
 - **Resolve Commit Issues**: NEVER use --no-verify flags - Instead resolve pre-commit hook findings and quality issues properly
+- **IIO Data Type Safety**: ALWAYS follow `.claude/docs/reference/iio-data-type-safety.md` patterns - Use `int32_t vals[2]` and validate range before uint16_t/uint32_t casts to prevent hardware damage from silent overflow
 
 ---
 
@@ -560,6 +561,8 @@ For detailed implementation guidance, see these comprehensive guides:
 - **[Testing Guide](docs/guides/testing-guide.md)**: Unit testing with Ceedling and hardware validation
 - **[Architecture Guide](docs/guides/architecture-guide.md)**: Repository structure and platform abstraction
 - **[IIO Scale/Offset Requirement](.claude/docs/reference/iio-scale-offset-requirement.md)**: IIO subsystem scale/offset implementation patterns (CRITICAL)
+- **[IIO Data Type Safety](.claude/docs/reference/iio-data-type-safety.md)**: CRITICAL data type patterns to prevent hardware damage from overflow (2026-05-29)
+- **[IIO Data Safety Quick Reference](.claude/docs/quick-reference/iio-data-safety-quick-ref.md)**: Quick checklist for safe IIO code generation
 
 ### Quality Analysis
 - **[6-Month Review Analysis](docs/reference/no-os-review-pattern-analysis.md)**: Statistical quality analysis and improvement patterns

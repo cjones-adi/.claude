@@ -343,7 +343,10 @@ class ReviewChecker:
         return issues
 
     def _check_type_safety(self, file_path: str, lines: List[str]) -> List[Issue]:
-        """Check type safety issues (5 occurrences in analysis)."""
+        """Check type safety issues (5 occurrences in analysis).
+
+        Enhanced with IIO data type safety checks (LT8460 bug fixes, 2026-05-29).
+        """
         issues = []
 
         for i, line in enumerate(lines, 1):
@@ -362,6 +365,49 @@ class ReviewChecker:
                     file_path, i, IssueLevel.WARNING, "Type Safety",
                     "Comparing signed value with sizeof (unsigned)",
                     "Use unsigned types for size comparisons"
+                ))
+
+            # IIO Data Type Safety Checks (CRITICAL - Hardware Damage Risk)
+            # Reference: .claude/docs/reference/iio-data-type-safety.md
+
+            # Pattern 1: Detect unsafe 'int vals[2]' with IIO functions
+            if re.search(r'\bint\s+vals\[2\]', line):
+                # Check if this file uses IIO functions (look ahead in context)
+                if 'iio_' in file_path or any('iio_' in l for l in lines[max(0, i-5):min(len(lines), i+10)]):
+                    issues.append(Issue(
+                        file_path, i, IssueLevel.ERROR, "IIO Type Safety",
+                        "CRITICAL: Use 'int32_t vals[2]' not 'int vals[2]' with IIO functions",
+                        "Type aliasing violation - causes undefined behavior on platforms where int != int32_t. "
+                        "See .claude/docs/reference/iio-data-type-safety.md"
+                    ))
+
+            # Pattern 2: Detect direct cast to uint16_t without overflow protection
+            if re.search(r'=\s*\(uint16_t\)\s*\(vals\[0\]\s*\*\s*MILLI', line):
+                issues.append(Issue(
+                    file_path, i, IssueLevel.ERROR, "IIO Type Safety",
+                    "CRITICAL: Direct cast to uint16_t without overflow check - HARDWARE DAMAGE RISK",
+                    "Use intermediate variable + range validation: "
+                    "int32_t temp = vals[0] * MILLI + vals[1] / MILLI; "
+                    "if (temp < 0 || temp > UINT16_MAX) return -EINVAL; "
+                    "See .claude/docs/reference/iio-data-type-safety.md"
+                ))
+
+            # Pattern 3: Detect direct cast to uint32_t without overflow protection
+            if re.search(r'=\s*\(uint32_t\)\s*\(vals\[0\]\s*\*\s*MILLI', line):
+                issues.append(Issue(
+                    file_path, i, IssueLevel.ERROR, "IIO Type Safety",
+                    "CRITICAL: Direct cast to uint32_t without overflow check",
+                    "Use intermediate int64_t variable + range validation. "
+                    "See .claude/docs/reference/iio-data-type-safety.md"
+                ))
+
+            # Pattern 4: Detect unsafe pointer casts with IIO value arrays
+            if re.search(r'\(int32_t\s*\*\)\s*&?vals\[', line):
+                issues.append(Issue(
+                    file_path, i, IssueLevel.ERROR, "IIO Type Safety",
+                    "Unsafe pointer cast on vals[] array",
+                    "Declare vals as int32_t[] instead of casting. "
+                    "See .claude/docs/reference/iio-data-type-safety.md"
                 ))
 
         return issues
