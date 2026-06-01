@@ -123,16 +123,39 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 → LET THE AGENT handle the complete workflow autonomously
 ```
 
+**WHY THIS IS MANDATORY - Automated Scripts vs Agent Comparison:**
+
+| Capability | Script Only (`ci-check-changed.sh`) | Agent (`driver-code-reviewer-no-os`) |
+|------------|-------------------------------------|--------------------------------------|
+| **AStyle formatting** | ✅ Checks | ✅ Checks + Fixes |
+| **Cppcheck static analysis** | ✅ Runs | ✅ Runs + Analyzes |
+| **Build verification** | ✅ Builds | ✅ Builds + Validates |
+| **Test coverage** | ✅ Metrics | ✅ Metrics + Validates correctness |
+| **Documentation checks** | ✅ Presence | ✅ Presence + Completeness |
+| **Logic bug detection** | ❌ **MISSED** | ✅ **FOUND** (parsing errors, API mismatches) |
+| **Protocol compliance** | ❌ **MISSED** | ✅ **FOUND** (PMBus, I2C spec violations) |
+| **API consistency** | ❌ **MISSED** | ✅ **FOUND** (definition vs usage) |
+| **Incomplete features** | ❌ **MISSED** | ✅ **FOUND** (configured but unused) |
+| **Hardware damage risks** | ❌ **MISSED** | ✅ **FOUND** (voltage calculation errors) |
+| **Quality Score** | 99.5% (false confidence) | Accurate assessment |
+
+**REAL EXAMPLE (LTM4700 May 29 vs June 1)**:
+- **Script only**: Reported 99.5/100, "Ready for merge"
+- **Agent review**: Found 2 critical bugs (hardware damage risk), 3 major issues, 1 minor issue
+- **Impact**: Script missed bugs that would cause regulator to set 300V instead of 3.3V
+
+**CONSEQUENCE OF VIOLATION**: Using script only creates false confidence and ships critical bugs to production.
+
 **Code Quality & Style:**
 - **🤖 PRIMARY: driver-code-reviewer-no-os Agent** - **MANDATORY for quality checks**
   - **Invocation**: `Task tool with subagent_type="driver-code-reviewer-no-os"`
   - **Autonomous workflow**:
-    1. Runs `.claude/tools/pre-commit/ci-check-changed.sh` automatically
-    2. Analyzes all findings (formatting, static analysis, builds, tests)
-    3. Plans fixes for all detected issues
+    1. Runs `.claude/tools/pre-commit/ci-check-changed.sh` automatically (surface checks)
+    2. Performs deep semantic analysis (logic, API, protocol compliance)
+    3. Plans fixes for all detected issues (automated + semantic)
     4. Implements fixes autonomously
     5. Verifies fixes by re-running quality checks
-    6. Reports comprehensive summary
+    6. Reports comprehensive summary with accurate assessment
   - **When to use**:
     - User says "check code quality"
     - Before committing code
@@ -141,6 +164,7 @@ Claude MUST follow this exact commit sequence for ALL driver implementations:
 - **🛠️ FALLBACK: Manual Script Execution** - Only use if agent invocation fails
   - **Tool**: `.claude/tools/pre-commit/ci-check-changed.sh [base-branch]`
   - **Use only when**: Agent cannot be invoked or specific script testing is needed
+  - **WARNING**: Script alone provides only surface-level validation, not complete review
 - **Pre-commit Hooks**: `.claude/tools/pre-commit/install-hooks.sh` - AStyle, Cppcheck, branch validation
 - **Pattern Detection**: `.claude/tools/pre-commit/review-checker.py` - 6-month analysis, 62.5% automation
 - **SonarCloud Integration**: `.claude/tools/pre-commit/setup-local-sonar.sh` - Local static analysis

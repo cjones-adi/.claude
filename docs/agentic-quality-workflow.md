@@ -15,13 +15,17 @@ Simply ask Claude to check code quality at any point:
 
 ### What Happens Automatically
 
-Claude will:
-1. ✅ Run `.claude/tools/pre-commit/ci-check-changed.sh` on changed files
-2. ✅ Parse and categorize all findings
-3. ✅ Offer to auto-fix simple issues (with your approval)
-4. ✅ Present complex issues for your review
-5. ✅ Verify builds and tests still pass
-6. ✅ Stage changes (you commit manually)
+**Claude will invoke the `driver-code-reviewer-no-os` agent**, which autonomously:
+1. ✅ Runs `.claude/tools/pre-commit/ci-check-changed.sh` (automated QA)
+2. ✅ Performs deep semantic code review (logic, API consistency, protocol compliance)
+3. ✅ Parses and categorizes all findings (automated + manual analysis)
+4. ✅ Offers to auto-fix simple issues (with your approval)
+5. ✅ Presents complex issues for your review
+6. ✅ Verifies builds and tests still pass
+7. ✅ Re-runs checks to confirm fixes
+8. ✅ Stages changes (you commit manually)
+
+**🚨 CRITICAL**: Do NOT run `.claude/tools/pre-commit/ci-check-changed.sh` directly when user requests "check code quality". Always invoke the agent for complete review (automated + semantic).
 
 ## Example Workflow
 
