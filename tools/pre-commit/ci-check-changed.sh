@@ -284,6 +284,11 @@ if [ -f ".claude/.cppcheckignore" ]; then
     CPPCHECK_ARGS+=("--suppressions-list=.claude/.cppcheckignore")
 fi
 
+# Add Claude framework suppressions (void functions, cleanup paths, etc.)
+if [ -f ".claude/tools/pre-commit/cppcheck-suppressions.txt" ]; then
+    CPPCHECK_ARGS+=("--suppressions-list=.claude/tools/pre-commit/cppcheck-suppressions.txt")
+fi
+
 # Add library config if exists
 if [ -f "./ci/config.cppcheck" ]; then
     CPPCHECK_ARGS+=("--library=./ci/config.cppcheck")

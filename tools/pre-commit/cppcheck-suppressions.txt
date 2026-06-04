@@ -1,0 +1,57 @@
+# Cppcheck suppression file for no-OS projects
+# This file is part of the .claude quality checker framework
+#
+# Usage: cppcheck --enable=warning --suppressions-list=.claude/tools/pre-commit/cppcheck-suppressions.txt
+
+# ============================================================================
+# VOID-RETURNING PLATFORM FUNCTIONS
+# ============================================================================
+# These no-OS platform functions return void, so "ignored return value"
+# warnings are false positives. They should be called for their side effects.
+
+# Mutex operations - all return void
+ignoredReturnValue:*/no_os_mutex_init
+ignoredReturnValue:*/no_os_mutex_lock
+ignoredReturnValue:*/no_os_mutex_unlock
+ignoredReturnValue:*/no_os_mutex_remove
+
+# Memory management - void return
+ignoredReturnValue:*/no_os_free
+
+# Delay functions - void return
+ignoredReturnValue:*/no_os_mdelay
+ignoredReturnValue:*/no_os_udelay
+
+# ============================================================================
+# CLEANUP PATH FUNCTIONS
+# ============================================================================
+# Functions called in cleanup/error paths where return values are
+# intentionally ignored to ensure cleanup completes even if steps fail
+
+# GPIO cleanup - errors in cleanup paths are logged but don't stop cleanup
+ignoredReturnValue:*/no_os_gpio_remove
+
+# SPI cleanup
+ignoredReturnValue:*/no_os_spi_remove
+
+# ============================================================================
+# BEST-EFFORT OPERATIONS
+# ============================================================================
+# Operations where failure is acceptable and doesn't affect correctness
+
+# Internal helper functions that embed error handling
+ignoredReturnValue:*/_lt8460_spi_write_and_read
+
+# ============================================================================
+# DOCUMENTATION
+# ============================================================================
+#
+# Categories:
+# 1. VOID-RETURNING: Functions that return void by design
+# 2. CLEANUP PATH: Error handling in cleanup - continue even if step fails
+# 3. BEST-EFFORT: Non-critical operations where failure is acceptable
+#
+# Maintenance:
+# - Add new suppressions with category header and comment explaining why
+# - Review suppressions periodically as no-OS API evolves
+# - Keep synchronized with review-patterns.json for consistency
