@@ -425,11 +425,6 @@ cat projects/<project>/builds.json
 cd projects/<project>
 make <flags_from_builds_json>
 
-# Example for LT8460:
-# builds.json shows: "BASIC_EXAMPLE=y IIO_EXAMPLE=n TARGET=max32665"
-cd projects/lt8460
-make BASIC_EXAMPLE=y IIO_EXAMPLE=n TARGET=max32665
-
 # Or use the CI script which automatically reads builds.json:
 .claude/tools/pre-commit/ci-check-changed.sh
 ```
@@ -449,11 +444,12 @@ python3 tools/scripts/build_projects.py . -project=<project_name>
 
 ### Key Build Variables
 
-**Common variables found in builds.json:**
-- `TARGET=<chip>` - Specific MCU/SoC (e.g., max32665, max78000, stm32f4)
-- `BASIC_EXAMPLE=y/n` - Enable basic example
-- `IIO_EXAMPLE=y/n` - Enable IIO example
-- Additional project-specific flags as defined in builds.json
+**Read `builds.json` for the exact flags required.**
+
+Common patterns (but always verify in builds.json):
+- `TARGET=<chip>` - Specific MCU/SoC
+- `EXAMPLE=<name>` - Example to build
+- Project-specific flags vary by project
 
 ### Framework Validation
 
