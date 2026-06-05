@@ -285,9 +285,12 @@ if [ -f ".claude/.cppcheckignore" ]; then
 fi
 
 # Add Claude framework suppressions (void functions, cleanup paths, etc.)
-if [ -f ".claude/tools/pre-commit/cppcheck-suppressions.txt" ]; then
-    CPPCHECK_ARGS+=("--suppressions-list=.claude/tools/pre-commit/cppcheck-suppressions.txt")
-fi
+# NOTE: Disabled due to invalid syntax - function-based suppressions not supported in suppressions files
+# The warnings this file tried to suppress (void function return values) are false positives
+# and cppcheck 2.13+ handles them correctly without explicit suppressions
+#if [ -f ".claude/tools/pre-commit/cppcheck-suppressions.txt" ]; then
+#    CPPCHECK_ARGS+=("--suppressions-list=.claude/tools/pre-commit/cppcheck-suppressions.txt")
+#fi
 
 # Add library config if exists
 if [ -f "./ci/config.cppcheck" ]; then
